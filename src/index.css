@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .font-urdu {
+    /* Nastaliq ke liye hamesha extra line-height deni chahiye */
+    line-height: 2.5; 
+    direction: rtl;
+  }
+}
+/* 1. Agar index.html mein link hai to yahan @import ki zaroorat nahi */
+
+/* 1. Sirf Font apply karein bina layout disturb kiye */
+html, body, #root {
+  font-family: 'Noto Nastaliq Urdu', serif !important;
+  line-height: 1.8 !important; /* Standard Urdu spacing */
+  background-color: #f8fafc;
+}
+
+/* 2. Agar aapne specific classes ko Urdu dena hai */
+.font-urdu {
+  font-family: 'Noto Nastaliq Urdu', serif !important;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 208, 148, 0.2);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 208, 148, 0.4);
+} 
+
+nav {
+  /* Margin top ko barqarar rakhne ke liye */
+  transition: all 0.3s ease-in-out;
+}
