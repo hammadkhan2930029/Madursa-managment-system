@@ -259,7 +259,7 @@ export const SideBar = ({ children }) => {
                 {/* <main className="p-8">
                     {children}
                 </main> */}
-                <main className="p-8">
+                <main className="p-4 md:p-6 lg:p-8">
                     <Outlet />
                 </main>
             </div>
