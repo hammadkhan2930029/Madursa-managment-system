@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Building2, Mail, Phone, MapPin,
-    Edit3, Save, X, Camera, Hash, Map, CheckCircle2, ChevronDown, Search, Check
+    Edit3, Save, X, Camera, Hash, Map, CheckCircle2, ChevronDown, Search, Check, ClipboardList, Users2
 } from 'lucide-react';
 import { AppImages } from '../../../Constant/AppImages';
 
 export const Profile = () => {
+    
     const [isEditing, setIsEditing] = useState(false);
     const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
     const [citySearch, setCitySearch] = useState('');
     const dropdownRef = useRef(null);
 
-    // Static Cities List (Aap isse database se bhi la sakte hain)
     const allCities = ["کراچی", "لاہور", "اسلام آباد", "راولپنڈی", "فیصل آباد", "ملتان", "پشاور", "کوئٹہ"];
 
     const [madrassaData, setMadrassaData] = useState({
@@ -22,12 +22,14 @@ export const Profile = () => {
         phone2: "0321-7654321",
         address: "گلشن اقبال، بلاک 13-C، کراچی",
         branch: "مین کیمپس",
-        city: "کراچی"
+        city: "کراچی",
+        // New Fields
+        familyNoSeq: "FAM-2026-001",
+        regNo: "REG-QA-9921"
     });
 
     const [tempData, setTempData] = useState({ ...madrassaData });
 
-    // Close dropdown on outside click
     useEffect(() => {
         const handleClick = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -46,7 +48,7 @@ export const Profile = () => {
     const filteredCities = allCities.filter(c => c.includes(citySearch));
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700" dir="rtl">
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700" dir="rtl">
 
             {/* --- HEADER SECTION --- */}
             <div className="relative bg-gradient-to-r from-[#004d61] to-[#002a33] rounded-[3rem] p-8 text-white shadow-2xl overflow-hidden">
@@ -97,6 +99,29 @@ export const Profile = () => {
             {/* --- INFO GRID --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+                {/* Registration & Family Sequence (New Section) */}
+                <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm space-y-6 md:col-span-2">
+                    <h3 className="text-lg font-black text-slate-800 border-r-4 border-[#00d094] pr-3">انتظامی معلومات</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InfoField 
+                            label="رجسٹریشن نمبر" 
+                            icon={<ClipboardList size={14} className="text-slate-400" />}
+                            value={madrassaData.regNo} 
+                            isEditing={isEditing} 
+                            tempValue={tempData.regNo} 
+                            onChange={(v) => setTempData({ ...tempData, regNo: v })} 
+                        />
+                        <InfoField 
+                            label="فیملی نمبر سیکوینس" 
+                            icon={<Users2 size={14} className="text-slate-400" />}
+                            value={madrassaData.familyNoSeq} 
+                            isEditing={isEditing} 
+                            tempValue={tempData.familyNoSeq} 
+                            onChange={(v) => setTempData({ ...tempData, familyNoSeq: v })} 
+                        />
+                    </div>
+                </div>
+
                 {/* Contact Info */}
                 <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm space-y-6">
                     <h3 className="text-lg font-black text-slate-800 border-r-4 border-[#00d094] pr-3">رابطہ کی تفصیلات</h3>
@@ -113,7 +138,6 @@ export const Profile = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <InfoField label="برانچ" value={madrassaData.branch} isEditing={isEditing} tempValue={tempData.branch} onChange={(v) => setTempData({ ...tempData, branch: v })} />
 
-                        {/* --- CITY DROPDOWN FIELD --- */}
                         <div className="space-y-2" ref={dropdownRef}>
                             <label className="text-[11px] font-black text-slate-400 mr-2 uppercase">شہر</label>
                             {isEditing ? (
@@ -166,9 +190,11 @@ export const Profile = () => {
     );
 };
 
-const InfoField = ({ label, value, isEditing, tempValue, onChange }) => (
+const InfoField = ({ label, value, isEditing, tempValue, onChange, icon }) => (
     <div className="space-y-2">
-        <label className="text-[11px] font-black text-slate-400 mr-2 uppercase tracking-widest">{label}</label>
+        <label className="text-[11px] font-black text-slate-400 mr-2 uppercase tracking-widest flex items-center gap-1">
+            {icon} {label}
+        </label>
         <div className={`p-4 rounded-2xl border transition-all ${isEditing ? 'bg-white border-emerald-200 ring-4 ring-emerald-50' : 'bg-slate-50 border-transparent'}`}>
             {isEditing ? (
                 <input value={tempValue} onChange={(e) => onChange(e.target.value)} className="bg-transparent w-full outline-none font-bold text-slate-700" />

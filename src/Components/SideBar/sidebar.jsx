@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Users, GraduationCap, UserCheck,
     BookOpen, Wallet, Settings, LogOut, Search,
     Bell, MessageSquare, Menu, ChevronDown,
-    ClipboardList, GraduationCap as ExamIcon, HeartHandshake,
+    ClipboardList, GraduationCap as ExamIcon, HeartHandshake, Building2,
     BadgeCent, Library, Store, X
 } from 'lucide-react';
 import { Badge, IconButton, Avatar } from '@mui/material';
@@ -25,6 +25,17 @@ export const SideBar = ({ children }) => {
     };
 
     const menuItems = [
+        {
+            id: 'branch_mgmt',
+            label: 'برانچ مینجمنٹ',
+            icon: Building2,
+            subMenu: [
+                // { id: 'add_branch', label: 'نئی برانچ شامل کریں', path: '/branch-management/create-branch' },
+                { id: 'campus_1', label: 'کیمپس 1', path: '/branch-management/campus-1' },
+                { id: 'campus_2', label: 'کیمپس 2', path: '/branch-management/campus-2' },
+                { id: 'campus_3', label: 'کیمپس 3', path: '/branch-management/campus-3' },
+            ]
+        },
         { id: 'dashboard', label: 'ڈیش بورڈ', icon: LayoutDashboard, path: '/dashboard' },
         {
             id: 'class_mgmt',
@@ -53,8 +64,26 @@ export const SideBar = ({ children }) => {
             label: 'طلباء',
             icon: GraduationCap,
             subMenu: [
-                { id: 'std_list', label: 'فہرست طلباء', path: '/students/list' },
-                { id: 'std_admission', label: 'نیا داخلہ', path: '/students/admission' }
+                {
+                    id: 'parent_reg',
+                    label: 'والدین کا اندراج',
+                    path: '/students/parent-registration'
+                },
+                {
+                    id: 'std_admission',
+                    label: 'داخلہ فارم',
+                    path: '/students/admission'
+                },
+                {
+                    id: 'std_list',
+                    label: 'طلباء کی فہرست',
+                    path: '/students/list'
+                },
+                {
+                    id: 'std_id_card',
+                    label: 'آئی ڈی کارڈ بنائیں',
+                    path: '/students/create-id-card'
+                }
             ]
         },
         {
@@ -77,6 +106,30 @@ export const SideBar = ({ children }) => {
     const toggleSubMenu = (id) => {
         setOpenSubMenu(openSubMenu === id ? null : id);
     };
+    //-------------------------------------------------------------------------------------------
+    const profileMenuItems = [
+        {
+            id: 'settings',
+            label: 'پروفائل سیٹنگ',
+            path: '/Profile/setting',
+            icon: Settings,
+            color: 'hover:text-[#00d094] hover:bg-emerald-50'
+        },
+        {
+            id: 'add_branch',
+            label: 'نئی برانچ شامل کریں',
+            path: '/branch-management/create-branch',
+            icon: UserCheck,
+            color: 'hover:text-[#00d094] hover:bg-emerald-50'
+        },
+        {
+            id: 'cities',
+            label: 'شہر',
+            path: '/Profile/cities',
+            icon: UserCheck,
+            color: 'hover:text-[#00d094] hover:bg-emerald-50'
+        },
+    ];
 
     return (
         <div className="min-h-screen bg-[#f8fafc] flex font-urdu" dir="rtl">
@@ -185,42 +238,37 @@ export const SideBar = ({ children }) => {
                         {/* --- DROPDOWN MENU --- */}
                         {isProfileOpen && (
                             <>
-                                {/* Click outside to close */}
+
+                                {/* Backdrop to close dropdown */}
                                 <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
 
-                                <div className="absolute top-full right-0 mt-4 w-52 bg-white  border border-white/20 shadow-2xl rounded-[2rem] z-50 overflow-hidden p-2 animate-in fade-in zoom-in duration-200 origin-top-right">
-                                    <button
-                                        onClick={() => {
-                                            navigate('/Profile/setting')
-                                            setIsProfileOpen(false)
-                                        }}
-                                        className="w-full flex items-center justify-start gap-3 p-3.5 rounded-2xl hover:bg-emerald-50 text-slate-600 hover:text-[#00d094] transition-all group" >
-                                        <span className="text-xs font-bold">پروفائل سیٹنگ</span>
-                                        <Settings size={18} className="text-slate-400 group-hover:text-[#00d094]" />
-                                    </button>
+                                <div className="absolute top-full right-0 mt-4 w-52 bg-white border border-white/20 shadow-2xl rounded-[2rem] z-50 overflow-hidden p-2 animate-in fade-in zoom-in duration-200 origin-top-right">
 
-                                    <button
-                                        onClick={() => {
+                                    {/* Dynamic Menu Items */}
+                                    {profileMenuItems.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                navigate(item.path);
+                                                setIsProfileOpen(false);
+                                            }}
+                                            className={`w-full flex items-center justify-start gap-3 p-3.5 rounded-2xl text-slate-600 transition-all group ${item.color}`}
+                                        >
+                                            <span className="text-xs font-bold">{item.label}</span>
+                                            <item.icon size={18} className="text-slate-400 group-hover:inherit" />
+                                        </button>
+                                    ))}
 
-                                            setIsProfileOpen(false)
-                                        }}
-                                        className="w-full flex items-center justify-start gap-3 p-3.5 rounded-2xl hover:bg-emerald-50 text-slate-600 hover:text-[#00d094] transition-all group" >
-                                        <span className="text-xs font-bold">میری سرگرمیاں</span>
-                                        <UserCheck size={18} className="text-slate-400 group-hover:text-[#00d094]" />
-                                    </button>
-                                    <button
-                                        className="w-full flex items-center justify-start gap-3 p-3.5 rounded-2xl hover:bg-emerald-50 text-slate-600 hover:text-[#00d094] transition-all group"
-                                        onClick={() => {
-                                            navigate('/Profile/cities')
-                                            setIsProfileOpen(false)
-                                        }}>
-                                        <span className="text-xs font-bold">شہر</span>
-                                        <UserCheck size={18} className="text-slate-400 group-hover:text-[#00d094]" />
-                                    </button>
-
+                                    {/* Logout Section */}
                                     <div className="h-px bg-slate-100 my-1 mx-2" />
 
-                                    <button className="w-full flex items-center justify-start gap-3 p-3.5 rounded-2xl hover:bg-rose-50 text-rose-500 transition-all group" onClick={() => setIsProfileOpen(false)}>
+                                    <button
+                                        className="w-full flex items-center justify-start gap-3 p-3.5 rounded-2xl hover:bg-rose-50 text-rose-500 transition-all group"
+                                        onClick={() => {
+                                            // Logout logic yahan ayegi
+                                            setIsProfileOpen(false);
+                                        }}
+                                    >
                                         <span className="text-xs font-bold">لاگ آؤٹ</span>
                                         <LogOut size={18} />
                                     </button>

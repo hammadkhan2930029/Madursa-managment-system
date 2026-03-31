@@ -13,10 +13,11 @@ import { Dashboard } from '../Pages/Dashboard/dashboard';
 // import { NotFound } from '../pages/NotFound';
 
 // Modular Routes Imports
-// import { StudentRoutes } from './StudentRoutes';
+import { StudentRoutes } from './StudentRoutes';
 // import { TeacherRoutes } from './TeacherRoutes';
 import { DepartmentRoutes } from './DepartmentRoutes';
 import { ProfileRoutes } from './ProfileRoutes';
+import { CreateBranch } from '../Pages/CreateBranches/CreateBranches'
 
 
 export const AppRoutes = () => {
@@ -31,6 +32,8 @@ export const AppRoutes = () => {
 
         {/* Single Core Pages */}
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="branch-management/create-branch" element={<CreateBranch />} />
+
         {/* <Route path="exams" element={<Exams />} />
           <Route path="scholarship" element={<Scholarship />} />
           <Route path="finance" element={<Finance />} />
@@ -42,8 +45,8 @@ export const AppRoutes = () => {
         {/* Injected Modular Routes */}
         {DepartmentRoutes}
         {ProfileRoutes}
-        {/* {StudentRoutes}
-          {TeacherRoutes} */}
+        {StudentRoutes}
+        {/* {TeacherRoutes} */}
 
       </Route>
 
