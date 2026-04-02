@@ -18,7 +18,7 @@ import { StudentRoutes } from './StudentRoutes';
 import { DepartmentRoutes } from './DepartmentRoutes';
 import { ProfileRoutes } from './ProfileRoutes';
 import { CreateBranch } from '../Pages/CreateBranches/CreateBranches'
-
+import {HRManagement}from '../Pages/HRManagement/HRManagement'
 
 export const AppRoutes = () => {
   return (
@@ -33,6 +33,8 @@ export const AppRoutes = () => {
         {/* Single Core Pages */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="branch-management/create-branch" element={<CreateBranch />} />
+        <Route path="HRManagement" element={<HRManagement />} />
+
 
         {/* <Route path="exams" element={<Exams />} />
           <Route path="scholarship" element={<Scholarship />} />

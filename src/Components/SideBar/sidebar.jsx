@@ -4,7 +4,7 @@ import {
     BookOpen, Wallet, Settings, LogOut, Search,
     Bell, MessageSquare, Menu, ChevronDown,
     ClipboardList, GraduationCap as ExamIcon, HeartHandshake, Building2,
-    BadgeCent, Library, Store, X, Moon, Sun
+    BadgeCent, Library, Store, X, Moon, Sun, UserPlus,
 } from 'lucide-react';
 import { Avatar } from '@mui/material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
@@ -12,12 +12,15 @@ import { ThemeToggle } from '../ThemToggle/ThemToggle'
 
 
 export const SideBar = () => {
+    //--------------------------------------------------------------------
+
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [openSubMenu, setOpenSubMenu] = useState(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isDark, setIsDark] = useState(false);
+    //--------------------------------------------------------------------
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme');
@@ -40,6 +43,7 @@ export const SideBar = () => {
     };
 
     const isActive = (path) => path && location.pathname === path;
+    //--------------------------------------------------------------------
 
     const menuItems = [
         {
@@ -52,7 +56,12 @@ export const SideBar = () => {
                 { id: 'campus_3', label: 'کیمپس 3', path: '/branch-management/campus-3' },
             ]
         },
-        { id: 'dashboard', label: 'ڈیش بورڈ', icon: LayoutDashboard, path: '/dashboard' },
+        {
+            id: 'dashboard',
+            label: 'ڈیش بورڈ',
+            icon: LayoutDashboard,
+            path: '/dashboard'
+        },
         {
             id: 'class_mgmt',
             label: 'کلاس مینجمنٹ',
@@ -64,25 +73,83 @@ export const SideBar = () => {
                 { id: 'subjects', label: 'مظامین ', path: '/class-management/subjects' },
             ]
         },
-        { id: 'hifz', label: 'شعبہ حفظ', icon: HeartHandshake, subMenu: [{ id: 'hifz_daily', label: 'روزانہ رپورٹ', path: '/hifz/daily-report' }, { id: 'hifz_exams', label: 'امتحانات', path: '/hifz/exams' }] },
         {
-            id: 'students', label: 'طلباء', icon: GraduationCap,
+            id: 'hifz',
+            label: 'شعبہ حفظ',
+            icon: HeartHandshake,
             subMenu: [
-                // { id: 'parent_reg', label: 'والدین کا اندراج', path: '/students/parent-registration' },
-                { id: 'std_admission', label: 'داخلہ فارم', path: '/students/admission' },
-                { id: 'std_list', label: 'طلباء کی فہرست', path: '/students/list' },
-                { id: 'std_id_card', label: 'آئی ڈی کارڈ بنائیں', path: '/students/create-id-card' }
+                { id: 'hifz_daily', label: 'روزانہ رپورٹ', path: '/hifz/daily-report' },
+                { id: 'hifz_exams', label: 'امتحانات', path: '/hifz/exams' }
             ]
         },
-        { id: 'teachers', label: 'اساتذہ', icon: UserCheck, subMenu: [{ id: 't_list', label: 'فہرست اساتذہ', path: '/teachers/list' }, { id: 't_attendance', label: 'حاضری', path: '/teachers/attendance' }] },
-        { id: 'exams', label: 'امتحان', icon: ExamIcon, path: '/exams' },
-        { id: 'scholarship', label: 'وظیفہ', icon: BadgeCent, path: '/scholarship' },
-        { id: 'finance', label: 'مالیات', icon: Wallet, path: '/finance' },
-        { id: 'reports', label: 'رپورٹس', icon: ClipboardList, path: '/reports' },
-        { id: 'books', label: 'کتاب', icon: Library, path: '/books' },
-        { id: 'store', label: 'اسٹور', icon: Store, path: '/store' },
-    ];
+        {
+            id: 'students',
+            label: 'طلباء',
+            icon: GraduationCap,
+            subMenu: [
 
+                { id: 'std_admission', label: 'داخلہ فارم', path: '/students/admission' },
+                { id: 'std_list', label: 'طلباء کی فہرست', path: '/students/list' },
+                { id: 'std_id_card', label: 'آئی ڈی کارڈ بنائیں', path: '/students/create-id-card' },
+                { id: 'std_attendance', label: 'طلبہ کی حاضری', path: '/students/attendance' },
+                { id: 'std_class_asign', label: 'طلبہ کو کلاس میں ایڈ کریں', path: '/students/class_asign' },
+
+
+            ]
+        },
+        {
+            id: 'teachers',
+            label: 'اساتذہ',
+            icon: UserCheck,
+            subMenu: [
+                { id: 't_list', label: 'فہرست اساتذہ', path: '/teachers/list' },
+                { id: 't_attendance', label: 'حاضری', path: '/teachers/attendance' }
+            ]
+        },
+        {
+            id: 'HRManagement',
+            label: 'عملہ',
+            icon: UserPlus,
+            path: '/HRManagement'
+        },
+        {
+            id: 'exams',
+            label: 'امتحان',
+            icon: ExamIcon,
+            path: '/exams'
+        },
+        {
+            id: 'scholarship',
+            label: 'وظیفہ',
+            icon: BadgeCent,
+            path: '/scholarship'
+        },
+        {
+            id: 'finance',
+            label: 'مالیات',
+            icon: Wallet,
+            path: '/finance'
+        },
+        {
+            id: 'reports',
+            label: 'رپورٹس',
+            icon: ClipboardList,
+            path: '/reports'
+        },
+        {
+            id: 'books',
+            label: 'کتاب',
+            icon: Library,
+            path: '/books'
+        },
+        {
+            id: 'store',
+            label: 'اسٹور',
+            icon: Store,
+            path: '/store'
+        },
+    ];
+    //--------------------------------------------------------------------
     const profileMenuItems = [
         { id: 'settings', label: 'پروفائل سیٹنگ', path: '/Profile/setting', icon: Settings },
         { id: 'add_branch', label: 'نئی برانچ شامل کریں', path: '/branch-management/create-branch', icon: UserCheck },
@@ -90,6 +157,7 @@ export const SideBar = () => {
     ];
 
     const toggleSubMenu = (id) => setOpenSubMenu(openSubMenu === id ? null : id);
+    //--------------------------------------------------------------------
 
     return (
         <div className="min-h-screen bg-themeBg flex font-urdu transition-colors duration-300" dir="rtl">
@@ -102,9 +170,8 @@ export const SideBar = () => {
             `}} />
 
             {/* --- SIDEBAR --- */}
-            {/* --- SIDEBAR --- */}
-            {/* --- SIDEBAR --- */}
-          
+
+
             <aside className={`fixed inset-y-0 right-0 z-[60] w-64 bg-gradient-to-b from-[#004d61] to-[#002a33] text-white p-4 transition-all duration-500 ease-in-out shadow-[10px_0_30px_rgba(0,0,0,0.1)] ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
                 <button className="md:hidden absolute left-4 top-6 text-white/50" onClick={() => setIsSidebarOpen(false)}>
                     <X size={24} />
@@ -191,7 +258,7 @@ export const SideBar = () => {
                                     <div className="fixed inset-0 z-[998]" onClick={() => setIsProfileOpen(false)} />
 
                                     {/* Profile Dropdown Container */}
-                                    <div className="absolute top-full right-0 mt-3 w-64 bg-[#111c2a] border border-white/10 shadow-2xl rounded-[2rem] z-[999] overflow-hidden p-2">
+                                    <div className="absolute top-full right-0 mt-3 w-64 bg-gradient-to-b from-[#004d61] to-[#002a33] border border-white/10 shadow-2xl rounded-[2rem] z-[999] overflow-hidden p-2">
 
                                         <div className="space-y-1">
                                             {profileMenuItems.map((item) => (
@@ -201,7 +268,7 @@ export const SideBar = () => {
                                                     className="w-full flex items-center justify-between gap-3 p-4 rounded-2xl text-white hover:bg-white/5 transition-all group"
                                                 >
                                                     <item.icon size={20} className="text-gray-400 group-hover:text-[#00d094]" />
-                                                    <span className="text-sm font-bold text-right flex-1 text-[#00d094]">{item.label}</span>
+                                                    <span className="text-sm font-bold text-right flex-1 group-hover:text-[#00d094]">{item.label}</span>
                                                 </button>
                                             ))}
                                         </div>

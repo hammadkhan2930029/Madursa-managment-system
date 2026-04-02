@@ -11,7 +11,7 @@ const pieData = [{ name: 'موصول', value: 75, color: '#00d094' }, { name: '�
 const StatCard = ({ title, value, subValue, icon: Icon, colorClass, borderClass, isIncome }) => (
     <div
         style={{ boxShadow: 'var(--shadow-card)' }}
-        className="p-6 rounded-[2.5rem] flex-1 min-w-[240px] bg-themeSurface border border-white/5 hover:-translate-y-1 transition-all duration-500 relative overflow-hidden group"
+        className="p-6 hover:shadow-2xl rounded-[2rem] flex-1 min-w-[240px] bg-themeSurface border border-white/5 hover:-translate-y-1 transition-all duration-500 relative overflow-hidden group"
     >
         {/* Background Decorative Icon */}
         <div className="absolute -right-4 -top-4 w-20 h-20 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity text-themeText">
@@ -145,7 +145,7 @@ export const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8" dir="rtl">
                 <div
                     style={{ boxShadow: 'var(--shadow-card)' }}
-                    className="lg:col-span-5 bg-themeSurface p-8 rounded-[3rem] border border-white/5"
+                    className="lg:col-span-5 bg-themeSurface p-8 rounded-[3rem] border border-white/5 "
                 >
                     <h3 className="text-lg font-bold text-themeText mb-6">کوئیک ایکشنز</h3>
                     <div className="grid grid-cols-2 gap-4">

@@ -121,44 +121,7 @@ export const CreateIdCard = () => {
     );
 };
 
-// const HorizontalCard = ({ data }) => (
-//     <div className="w-[400px] h-[270px] bg-white rounded-xl shadow-2xl border border-gray-300 overflow-hidden flex flex-col text-black font-sans print:shadow-none print:border-gray-400">
-//         <div className="bg-[#002a33] p-3 flex items-center justify-between">
-//             <div className="flex items-center gap-2">
-//                 <div className="w-8 h-8 bg-white rounded-md p-1"><img src={AppImages.logo} className="w-full h-full object-contain" /></div>
-//                 <div>
-//                     <h2 className="text-white text-sm font-bold leading-none">جامعہ انوار القرآن</h2>
-//                     <p className="text-[#00d094] text-[8px] font-bold">Jamia Anwar-ul-Quran</p>
-//                 </div>
-//             </div>
-//             <span className="text-white bg-white/10 px-2 py-0.5 rounded text-[9px] font-bold border border-white/20">STUDENT CARD</span>
-//         </div>
 
-//         <div className="flex flex-1 p-4 gap-4 items-center">
-//             <div className="flex-1 space-y-2 text-right">
-//                 <div className="flex justify-between border-b border-gray-100 pb-1">
-//                     <span className="text-[14px] font-bold">{data.name}</span>
-//                     <span className="text-[10px] text-gray-400">:نام</span>
-//                 </div>
-//                 <div className="flex justify-between border-b border-gray-100 pb-1">
-//                     <span className="text-[14px] font-bold">{data.fatherName}</span>
-//                     <span className="text-[10px] text-gray-400">:ولدیت</span>
-//                 </div>
-//                 <div className="flex justify-between border-b border-gray-100 pb-1">
-//                     <span className="text-[14px] font-bold text-[#002a33]">{data.class}</span>
-//                     <span className="text-[10px] text-gray-400">:درجہ</span>
-//                 </div>
-//             </div>
-//             <div className="w-24 h-28 border-2 border-[#002a33] rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-//                 <User size={40} className="text-gray-300" />
-//             </div>
-//         </div>
-//         <div className="bg-gray-50 px-3 py-1.5 flex justify-between items-center border-t">
-//             <span className="text-[10px] font-bold">Reg: {data.idNo}</span>
-//             <span className="text-[10px] font-medium text-gray-500">{data.mobile}</span>
-//         </div>
-//     </div>
-// );
 const HorizontalCard = ({ data }) => (
     /* Standard Card: 85.6mm x 54mm */
     <div style={{ fontFamily: 'Noto Nastaliq Urdu' }} className="w-[85.6mm] h-[60mm] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col text-black font-sans print:shadow-none print:border-gray-400 relative">
