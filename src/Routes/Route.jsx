@@ -19,7 +19,7 @@ import { DepartmentRoutes } from './DepartmentRoutes';
 import { ProfileRoutes } from './ProfileRoutes';
 import { CreateBranch } from '../Pages/CreateBranches/CreateBranches'
 import {HRManagement}from '../Pages/HRManagement/HRManagement'
-
+import { SettingRoutes } from './SettingRoutes';
 export const AppRoutes = () => {
   return (
     // <Router>
@@ -36,6 +36,7 @@ export const AppRoutes = () => {
         <Route path="HRManagement" element={<HRManagement />} />
 
 
+
         {/* <Route path="exams" element={<Exams />} />
           <Route path="scholarship" element={<Scholarship />} />
           <Route path="finance" element={<Finance />} />
@@ -48,6 +49,7 @@ export const AppRoutes = () => {
         {DepartmentRoutes}
         {ProfileRoutes}
         {StudentRoutes}
+        {SettingRoutes}
         {/* {TeacherRoutes} */}
 
       </Route>

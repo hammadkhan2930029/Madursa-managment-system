@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Camera, Save, User, MapPin, Phone, BookOpen, HeartPulse, Printer, X, CheckCircle, Search } from 'lucide-react';
 import { Formik, Form, Field } from 'formik';
 import { AppImages } from '../../../Constant/AppImages';
+import { InputField } from "../../../Components/HR/FormElements";
 
 export const AdmissionForm = () => {
     const [imagePreview, setImagePreview] = useState(null);
@@ -35,7 +36,7 @@ const formatDate = (dateStr) => {
 };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-2 " dir="rtl">
+        <div className="max-w-6xl mx-auto p-4 md:p-2 bg-[var(--color-bg)]" dir="rtl">
             <Formik
                 initialValues={{
                     idNo: '', admissionDate: '', admissionFee: '',
@@ -53,7 +54,7 @@ const formatDate = (dateStr) => {
                     <>
                         {/* --- SCREEN VIEW (Form) --- */}
                         <Form className="print:hidden space-y-8 pb-10 ">
-                            <div className="bg-thembg  rounded-[2rem] shadow-2xl border-1 border-slate-50 overflow-hidden ">
+                            <div className="bg-[var(--color-surface)] rounded-[2rem] shadow-2xl border-1 border-[#00d094]/30 overflow-hidden ">
                                 <div className="bg-[#002a33] p-8 text-center text-white">
                                     <h2 className="text-3xl font-bold">طالب علم رجسٹریشن فارم</h2>
                                     <p className="text-emerald-400 mt-2">جامعہ انوار القرآن</p>
@@ -311,26 +312,10 @@ const FormSection = ({ title, icon, children }) => (
     </div>
 );
 
-const InputField = ({ label, name, type = "text" }) => (
-    <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-slate-500 mr-1">{label}</label>
-        <Field name={name} type={type} className="bg-themeSurface/50 border-2 border-slate-100 p-3.5 rounded-xl focus:bg-white focus:border-emerald-400 outline-none transition-all shadow-sm font-medium" />
-    </div>
-);
 
 
-// const DateInputField = ({ label, name, value, setFieldValue }) => (
-//     <div className="flex flex-col gap-2">
-//         <label className="text-sm font-semibold text-slate-500 mr-1">{label}</label>
-//         <DatePicker
-//             selected={(value && new Date(value)) || null}
-//             onChange={(val) => setFieldValue(name, val)}
-//             dateFormat="dd-MM-yyyy" // <--- Ye aapka matlooba format hai
-//             className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-xl focus:bg-white focus:border-emerald-400 outline-none transition-all shadow-sm font-medium"
-//             placeholderText="DD-MM-YYYY"
-//         />
-//     </div>
-// );
+
+
 
 const PrintLine = ({ label, value, flex = "1" }) => (
     <div style={{ flex }} className="flex items-baseline gap-2">

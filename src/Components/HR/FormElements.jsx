@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 
 export const InputField = ({ label, placeholder, isDark, type = "text" }) => (
   <div className="space-y-2">
-    <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label} *</label>
+    <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
     <input
       type={type}
       placeholder={placeholder}

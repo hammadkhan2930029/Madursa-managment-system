@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, CreditCard, Layout, Smartphone, User, Printer ,GraduationCap} from 'lucide-react';
+import { Search, CreditCard, Layout, Smartphone, User, Printer, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppImages } from '../../../Constant/AppImages';
+import { InputField } from '../../../Components/HR/FormElements';
 
 export const CreateIdCard = () => {
     const [searchId, setSearchId] = useState('');
@@ -27,38 +28,41 @@ export const CreateIdCard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-themeBg p-4 md:p-8" dir="rtl">
+        <div className="min-h-screen bg-[var(--color-bg)] p-4 md:p-8" dir="rtl">
             {/* --- Ye section Print mein hide ho jayega --- */}
-            <div className="max-w-4xl mx-auto bg-themeSurface p-6 rounded-[2rem] shadow-xl border border-white/5 mb-10 print:hidden">
-                <h2 className="text-xl font-black mb-6 flex items-center gap-3 text-themeText">
+            <div className="max-w-6xl mx-auto bg-[var(--color-surface)] p-6 rounded-[2rem] shadow-xl border border-[var(--color-border)] mb-10 print:hidden">
+                <h2 className="text-xl font-black mb-6 flex items-center gap-3 text-[var(--color-primary)]">
                     <CreditCard className="text-[#00d094]" /> آئی ڈی کارڈ جنریٹر
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-themeMuted mr-2">رجسٹریشن نمبر</label>
+                        <label className="text-xs font-bold text-[var(--color-text-muted)] mr-2">رجسٹریشن نمبر</label>
                         <input
                             type="text"
                             value={searchId}
                             onChange={(e) => setSearchId(e.target.value)}
-                            className="w-full bg-themeBg border-2 border-slate-200 dark:border-white/10 focus:border-[#00d094] p-3.5 rounded-xl outline-none font-bold text-themeText"
+                            className="w-full bg-[var(--color-input)] border-2 border-[var(--color-border)] focus:border-[var(--color-primary)] p-3.5 rounded-xl outline-none font-bold text-[var(--color-text)] transition-all"
                             placeholder="1234"
                         />
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-themeMuted mr-2">لے آؤٹ</label>
-                        <div className="flex bg-themeBg p-1 rounded-xl border-2 border-slate-200 dark:border-white/10">
-                            <button onClick={() => setLayout('horizontal')} className={`flex-1 py-2 rounded-lg font-bold flex items-center justify-center gap-2 ${layout === 'horizontal' ? 'bg-[#00d094] text-[#002a33]' : 'text-themeMuted'}`}>
+                        <label className="text-xs font-bold text-[var(--color-text-muted)] mr-2">لے آؤٹ</label>
+                        <div className="flex bg-[var(--color-input)] p-1 rounded-xl border-2 border-[var(--color-border)] ">
+                            <button onClick={() => setLayout('horizontal')} className={`flex-1 py-2 rounded-lg font-bold flex items-center justify-center gap-2 ${layout === 'horizontal' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-muted)]'}`}>
                                 <Layout size={16} /> Horizontal
                             </button>
-                            <button onClick={() => setLayout('vertical')} className={`flex-1 py-2 rounded-lg font-bold flex items-center justify-center gap-2 ${layout === 'vertical' ? 'bg-[#00d094] text-[#002a33]' : 'text-themeMuted'}`}>
+                            <button onClick={() => setLayout('vertical')} className={`flex-1 py-2 rounded-lg font-bold flex items-center justify-center gap-2 ${layout === 'vertical' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-muted)]'}`}>
                                 <Smartphone size={16} /> Vertical
                             </button>
                         </div>
                     </div>
 
-                    <button onClick={handleSearch} className="bg-[#00d094] text-[#002a33] py-4 rounded-xl font-black shadow-lg hover:bg-[#00b37e] transition-all">
+                    <button
+                        onClick={handleSearch}
+                        className="bg-[var(--color-primary)] text-white py-4 rounded-xl font-black shadow-lg shadow-[var(--color-primary)]/20 hover:opacity-90 active:scale-[0.98] transition-all"
+                    >
                         {loading ? "تلاش جاری..." : "کارڈ جنریٹ کریں"}
                     </button>
                 </div>
@@ -125,7 +129,7 @@ export const CreateIdCard = () => {
 const HorizontalCard = ({ data }) => (
     /* Standard Card: 85.6mm x 54mm */
     <div style={{ fontFamily: 'Noto Nastaliq Urdu' }} className="w-[85.6mm] h-[60mm] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col text-black font-sans print:shadow-none print:border-gray-400 relative">
-        
+
         {/* Header Section */}
         <div className="bg-[#002a33] p-2 flex items-center justify-between border-b-2 border-[#00d094]">
             <div className="flex items-center gap-2">
@@ -138,10 +142,10 @@ const HorizontalCard = ({ data }) => (
                 </div>
             </div>
             <div className="text-right ">
-                <span className="text-white  bg-white/10 px-2 py-0.5 rounded-full text-[7px] font-black border border-white/10 uppercase tracking-tighter">Student ID</span>
+                <span className="text-white  bg-white/10 px-2 py-0.5 rounded-full text-[7px] font-black border border-[var(--color-border)]/10 uppercase tracking-tighter">Student ID</span>
             </div>
         </div>
-        
+
         {/* Main Body */}
         <div className="flex flex-1 p-3 gap-3 items-center bg-gradient-to-br from-white to-gray-50">
             {/* Student Info (Right Aligned for Urdu) */}
@@ -197,7 +201,7 @@ const VerticalCard = ({ data }) => (
         </div>
 
         <div className="flex-1 flex flex-col items-center px-6 -mt-10">
-            <div className="w-24 h-24 border-4 border-white shadow-lg rounded-full overflow-hidden bg-gray-50 z-10">
+            <div className="w-24 h-24 border-4 border-[var(--color-border)] shadow-lg rounded-full overflow-hidden bg-gray-50 z-10">
                 <User size={40} className="text-gray-300 mt-6 mx-auto" />
             </div>
             <h3 className="text-lg font-black text-[#002a33] mt-1">{data.name}</h3>

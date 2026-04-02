@@ -9,6 +9,7 @@ import {
 import { Avatar } from '@mui/material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { ThemeToggle } from '../ThemToggle/ThemToggle'
+import { SelectField } from '../HR/FormElements';
 
 
 export const SideBar = () => {
@@ -158,6 +159,22 @@ export const SideBar = () => {
 
     const toggleSubMenu = (id) => setOpenSubMenu(openSubMenu === id ? null : id);
     //--------------------------------------------------------------------
+    const setting = [
+        {
+            id: 'setting',
+            label: 'ترتیبات',
+            icon: Settings,
+            subMenu: [
+                { id: 'shift', label: 'شفٹ کا انتظام', path: '/setting/shift' },
+                { id: 'department', label: 'شعبہ جات کا انتظام', path: '/setting/department' },
+                { id: 'degree', label: 'تعلیمی اسناد کے نام', path: '/setting/degree-name' },
+
+            ]
+        }
+
+    ];
+
+    //----------------------------------------------------------------------
 
     return (
         <div className="min-h-screen bg-themeBg flex font-urdu transition-colors duration-300" dir="rtl">
@@ -167,6 +184,13 @@ export const SideBar = () => {
                 .vip-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .vip-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
                 .vip-scrollbar:hover::-webkit-scrollbar-thumb { background: #00d094; opacity: 0.3; }
+                .animate-spin-slow {
+                       animation: spin 4s linear infinite;
+                 }
+                @keyframes spin {
+                       from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                 }
             `}} />
 
             {/* --- SIDEBAR --- */}
@@ -187,7 +211,7 @@ export const SideBar = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)] vip-scrollbar px-1">
+                <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)] vip-scrollbar px-1 ">
                     {menuItems.map((item) => (
                         <div key={item.id}>
                             <div
@@ -221,14 +245,66 @@ export const SideBar = () => {
                         </div>
                     ))}
                 </div>
+                {/* --------------------------------------setting---------------------------------------------------- */}
+                <div className={`fixed top-1/2 -translate-y-1/2 z-[70] transition-all duration-500 ${isSidebarOpen ? 'right-64' : 'right-0 md:right-64'}`}>
+                    <div className="relative group">
+                        {/* --- Floating Button --- */}
+                        <button
+                            onClick={() => toggleSubMenu('floating_settings')}
+                            style={{ backgroundColor: 'var(--color-primary)' }}
+                            className="flex items-center justify-center w-10 h-12 text-white rounded-l-full shadow-lg hover:w-14 transition-all duration-300 group"
+                        >
+                            <Settings size={22} className={`${openSubMenu === 'floating_settings' ? 'rotate-90' : 'animate-spin-slow'}`} />
+                        </button>
 
-                <div className="absolute bottom-6 left-6 right-6 pt-4 border-t border-white/5">
-                    <button className="flex items-center gap-3 p-3 w-full text-gray-400 hover:text-rose-400 transition-all hover:bg-rose-500/5 rounded-xl">
-                        <LogOut size={18} />
-                        <span className="text-[13px] font-medium">خروج ہوں</span>
-                    </button>
+                        {/* --- Floating Quick Menu --- */}
+                        {openSubMenu === 'floating_settings' && (
+                            <div
+                                style={{
+                                    backgroundColor: 'var(--color-surface)',
+                                    borderColor: 'var(--color-border)',
+                                    color: 'var(--color-text-main)'
+                                }}
+                                className="absolute top-0 -right-60 lg:right-12 md:right-8 w-56 backdrop-blur-xl border shadow-2xl rounded-[2rem] p-3 animate-in slide-in-from-left-5 fade-in duration-300"
+                            >
+                                <p
+                                    style={{ color: 'var(--color-primary)' }}
+                                    className="text-[10px] font-black uppercase tracking-widest mb-3 px-3"
+                                >
+                                    Quick Actions
+                                </p>
+
+                                <div className="space-y-1">
+                                    {setting[0].subMenu.map((sub) => (
+                                        <button
+                                            key={sub.id}
+                                            onClick={() => { navigate(sub.path); setOpenSubMenu(null); }}
+                                            style={{ '--hover-bg': 'var(--color-bg)' }}
+                                            className="w-full flex items-center justify-between p-3 rounded-xl transition-all group/item hover:bg-[var(--hover-bg)]"
+                                        >
+                                            <span
+                                                style={{ color: 'var(--color-text-main)' }}
+                                                className="text-xs font-bold group-hover/item:text-[var(--color-primary)] transition-colors"
+                                            >
+                                                {sub.label}
+                                            </span>
+
+                                            <div
+                                                style={{
+                                                    backgroundColor: 'var(--color-text-muted)',
+                                                    borderColor: 'var(--color-border)'
+                                                }}
+                                                className="w-1.5 h-1.5 rounded-full group-hover/item:bg-[var(--color-primary)] transition-all"
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </aside>
+            {/* ------------------------------------------------------------------------------------------ */}
 
 
             {/* --- MAIN CONTENT AREA --- */}
@@ -290,37 +366,39 @@ export const SideBar = () => {
                     </div>
 
                     <div className="flex items-center gap-4 flex-1 justify-end md:justify-center">
-                        <div className="hidden md:flex items-center gap-3 bg-themeInput px-5 py-2.5 rounded-full 
-    /* Light mode shadow */
-    shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] 
-    /* Dark mode shadow: Isay zayada dark aur wazay kiya hai */
-    dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)]
-    /* Border logic: Light mein transparent, Dark mein wazay border */
-    border border-transparent dark:border-themeBorder/60
-    w-full max-w-md 
-    /* Focus state */
-    focus-within:max-w-lg focus-within:border-[#00d094] focus-within:bg-themeSurface focus-within:shadow-md 
-    transition-all duration-300 group relative">
+                        <div
+                            className="
+                                  hidden md:flex items-center gap-3 px-5 py-2.5 rounded-full transition-all duration-300 group relative w-full max-w-md 
+                                  bg-[var(--color-input)] border border-[var(--color-border)]
+                                  shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] 
+                                  focus-within:max-w-lg focus-within:border-[var(--color-primary)] focus-within:bg-[var(--color-surface)] focus-within:shadow-md
+                                  ">
 
-                            {/* Search Icon */}
-                            <div className="flex-none text-themeMuted group-focus-within:text-[#00d094] transition-colors">
-                                <Search size={18} />
+                            <div className="flex-none transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+                                <div className="group-focus-within:text-[var(--color-primary)]">
+                                    <Search size={18} />
+                                </div>
                             </div>
 
-                            {/* Shortcut Key (KBD) */}
-                            <kbd className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-themeBorder bg-themeBg text-[10px] text-themeMuted font-bold uppercase transition-opacity group-focus-within:opacity-0">
+                            <kbd
+                                style={{
+                                    backgroundColor: 'var(--color-bg)',
+                                    borderColor: 'var(--color-border)',
+                                    color: 'var(--color-text-muted)'
+                                }}
+                                className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase transition-opacity group-focus-within:opacity-0"
+                            >
                                 ⌘ K
                             </kbd>
 
-                            {/* Input Field */}
                             <input
                                 type="text"
                                 placeholder="کچھ بھی تلاش کریں..."
-                                className="bg-transparent outline-none text-[13px] text-right font-medium text-themeText flex-grow 
-               placeholder:text-themeMuted 
-               focus:placeholder-transparent transition-all duration-300"
+                                style={{ color: 'var(--color-text-main)' }}
+                                className="bg-transparent outline-none text-[13px] text-right font-medium flex-grow placeholder:text-[var(--color-text-muted)] focus:placeholder-transparent transition-all duration-300"
                             />
                         </div>
+
                         <div className="hidden lg:flex items-center gap-2">
                             <button className="p-2.5 text-themeMuted hover:bg-emerald-50/10 hover:text-[#00d094] rounded-xl relative transition-all">
                                 <Bell size={20} />

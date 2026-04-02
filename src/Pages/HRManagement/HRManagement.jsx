@@ -38,16 +38,8 @@ export const HRManagement = () => {
       <div className="max-w-7xl mx-auto bg-[var(--color-surface)] rounded-[1.5rem] lg:rounded-[2.5rem] p-4 shadow-sm border border-[var(--color-border)] mb-8 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 transition-all" dir="rtl">
 
         {/* --- SECTION 1: Search & Checkbox --- */}
-        {/* Ab ye 'lg' screen se pehle poori width lega */}
         <div className="flex items-center gap-2 w-full lg:w-auto">
-          {/* <div className="relative flex-1 lg:w-64">
-            <input
-              type="text"
-              placeholder="تلاش کریں..."
-              className="w-full bg-[var(--color-input)] border border-[var(--color-border)] rounded-xl py-2.5 pr-10 pl-3 outline-none focus:border-[var(--color-primary)] transition-all font-bold text-xs"
-            />
-            <Search className="absolute right-3 top-2.5 text-[var(--color-text-muted)]" size={16} />
-          </div> */}
+          
 
           <div className="flex items-center gap-2 bg-rose-50/50 px-3 py-2 rounded-xl border border-rose-100 shrink-0">
             <input type="checkbox" className="w-3.5 h-3.5 accent-rose-500 cursor-pointer" />

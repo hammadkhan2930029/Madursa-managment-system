@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Calendar, ArrowRight, Save } from 'lucide-react';
 
@@ -25,15 +23,14 @@ export const CreateSessions = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-700" dir="rtl">
+        <div className="space-y-6 animate-in fade-in duration-700 p-2" dir="rtl">
             {/* --- HEADER --- */}
             <div 
-                style={{ boxShadow: 'var(--shadow-card)' }}
-                className="flex flex-col md:flex-row justify-between items-center gap-4 bg-themeSurface/40 p-6 rounded-[2.5rem] border border-white/5 backdrop-blur-sm"
+                className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--color-surface)] p-6 rounded-[2.5rem] border border-[var(--color-border)] shadow-sm backdrop-blur-sm"
             >
                 <div className="text-right">
-                    <h2 className="text-2xl font-black text-themeText tracking-tight">تعلیمی سیشن</h2>
-                    <p className="text-sm text-themeMuted font-medium text-right">کل ریکارڈ: {sessions.length}</p>
+                    <h2 className="text-2xl font-black text-[var(--color-text)] tracking-tight">تعلیمی سیشن</h2>
+                    <p className="text-sm text-[var(--color-text-muted)] font-medium text-right">کل ریکارڈ: {sessions.length}</p>
                 </div>
                 <button 
                     onClick={() => isFormOpen ? closeForm() : setIsFormOpen(true)}
@@ -51,8 +48,7 @@ export const CreateSessions = () => {
             {/* --- FORM (Edit & Create Mode) --- */}
             {isFormOpen && (
                 <div 
-                    style={{ boxShadow: 'var(--shadow-card)' }}
-                    className="bg-themeSurface/80 backdrop-blur-xl border border-[#00d094]/20 rounded-[2.5rem] p-8 animate-in slide-in-from-top duration-500"
+                    className="bg-[var(--color-surface)] border border-[#00d094]/20 rounded-[2.5rem] p-8 animate-in slide-in-from-top duration-500 shadow-xl"
                 >
                     <div className="flex items-center gap-2 mb-6 text-[#00d094] font-black">
                         {editMode ? <Edit2 size={20} /> : <Plus size={20} />}
@@ -62,32 +58,32 @@ export const CreateSessions = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                         {/* Right: Islami Year */}
                         <div className="space-y-2 text-right">
-                            <label className="text-[11px] font-black text-themeMuted mr-2 block text-right tracking-widest">اسلامی سال (ہجری) *</label>
+                            <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 block text-right tracking-widest uppercase">اسلامی سال (ہجری) *</label>
                             <input 
                                 type="text" 
                                 value={formData.islamiYear}
                                 onChange={(e) => setFormData({...formData, islamiYear: e.target.value})}
                                 placeholder="مثلاً: ۱۴۴۵ - ۱۴۴۶ھ" 
-                                className="w-full shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] bg-themeBg/50 border border-white/10 focus:border-[#00d094] focus:ring-4 focus:ring-[#00d094]/5 outline-none h-[64px] pb-2 pt-1 px-4 rounded-2xl text-lg font-bold text-right text-themeText transition-all leading-[2.5]" 
+                                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] focus:border-[#00d094] focus:ring-4 focus:ring-[#00d094]/5 outline-none h-[64px] pb-2 pt-1 px-4 rounded-2xl text-lg font-bold text-right text-[var(--color-text)] transition-all leading-[2.5]" 
                             />
                         </div>
 
                         {/* Left: Esvi Year */}
                         <div className="space-y-2 text-right">
-                            <label className="text-[11px] font-black text-themeMuted mr-2 block text-right tracking-widest">عیسوی سال *</label>
+                            <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 block text-right tracking-widest uppercase">عیسوی سال *</label>
                             <input 
                                 type="text" 
                                 value={formData.esviYear}
                                 onChange={(e) => setFormData({...formData, esviYear: e.target.value})}
                                 placeholder="مثلاً: 2024 - 2025" 
-                                className="w-full shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] bg-themeBg/50 border border-white/10 focus:border-[#00d094] focus:ring-4 focus:ring-[#00d094]/5 outline-none h-[64px] pb-2 pt-1 px-4 rounded-2xl text-lg font-bold text-right text-themeText transition-all leading-[2.5]" 
+                                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] focus:border-[#00d094] focus:ring-4 focus:ring-[#00d094]/5 outline-none h-[64px] pb-2 pt-1 px-4 rounded-2xl text-lg font-bold text-right text-[var(--color-text)] transition-all leading-[2.5]" 
                             />
                         </div>
                     </div>
 
                     <div className="mt-8 flex justify-end gap-3">
                         {editMode && (
-                            <button onClick={closeForm} className="px-6 py-4 rounded-xl font-black text-sm text-themeMuted hover:bg-white/5 transition-all">کینسل</button>
+                            <button onClick={closeForm} className="px-6 py-4 rounded-xl font-black text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-bg)] transition-all">کینسل</button>
                         )}
                         <button className="bg-[#218838] hover:bg-[#1a6d2c] text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-green-900/20 transition-all flex items-center gap-3">
                              {editMode ? 'تبدیل کریں' : 'محفوظ کریں'} 
@@ -99,33 +95,32 @@ export const CreateSessions = () => {
 
             {/* --- LIST TABLE --- */}
             <div 
-                style={{ boxShadow: 'var(--shadow-card)' }}
-                className="bg-themeSurface/40 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-sm"
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[2.5rem] overflow-hidden shadow-sm backdrop-blur-sm"
             >
                 <div className="overflow-x-auto">
                     <table className="w-full text-right border-separate border-spacing-y-2 px-4">
                         <thead>
-                            <tr className="text-themeMuted">
-                                <th className="px-6 py-4 text-[11px] font-black text-right uppercase">اسلامی سال</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-right uppercase">عیسوی سال</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-right uppercase">ایکشن</th>
+                            <tr className="text-[var(--color-text-muted)]">
+                                <th className="px-6 py-4 text-[11px] font-black text-right uppercase tracking-widest">اسلامی سال</th>
+                                <th className="px-6 py-4 text-[11px] font-black text-right uppercase tracking-widest">عیسوی سال</th>
+                                <th className="px-6 py-4 text-[11px] font-black text-right uppercase tracking-widest">ایکشن</th>
                             </tr>
                         </thead>
                         <tbody>
                             {sessions.map((ses) => (
                                 <tr 
                                     key={ses.id} 
-                                    className={`bg-themeSurface/60 hover:bg-themeSurface hover:scale-[1.01] transition-all duration-300 group shadow-sm rounded-2xl ${editMode === ses.id ? 'ring-2 ring-[#00d094]' : ''}`}
+                                    className={`bg-[var(--color-bg)]/40 hover:bg-[var(--color-bg)] hover:scale-[1.01] transition-all duration-300 group shadow-sm rounded-2xl ${editMode === ses.id ? 'ring-2 ring-[#00d094]' : ''}`}
                                 >
-                                    <td className="px-6 py-4 font-black text-themeText text-right first:rounded-r-2xl">
+                                    <td className="px-6 py-4 font-black text-[var(--color-text)] text-right first:rounded-r-2xl">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-themeBg text-themeMuted rounded-lg group-hover:bg-[#00d094] group-hover:text-white transition-all">
+                                            <div className="p-2 bg-[var(--color-surface)] text-[var(--color-text-muted)] rounded-lg group-hover:bg-[#00d094] group-hover:text-white transition-all border border-[var(--color-border)]">
                                                 <Calendar size={16} />
                                             </div>
                                             <span>{ses.islamiYear}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 font-bold text-themeText text-right">
+                                    <td className="px-6 py-4 font-bold text-[var(--color-text)] text-right">
                                         {ses.esviYear}
                                     </td>
                                     <td className="px-6 py-4 text-right last:rounded-l-2xl">
@@ -150,7 +145,7 @@ export const CreateSessions = () => {
 
             {/* --- BACK BUTTON --- */}
             <div className="flex justify-start px-4">
-                <button className="flex items-center gap-2 bg-themeSurface/50 text-themeMuted px-8 py-3 rounded-2xl font-black text-sm border border-white/5 hover:bg-[#00d094] hover:text-white transition-all shadow-sm">
+                <button className="flex items-center gap-2 bg-[var(--color-surface)] text-[var(--color-text-muted)] px-8 py-3 rounded-2xl font-black text-sm border border-[var(--color-border)] hover:bg-[#00d094] hover:text-white transition-all shadow-sm">
                     واپس <ArrowRight size={18} />
                 </button>
             </div>

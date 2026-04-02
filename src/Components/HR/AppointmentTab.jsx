@@ -1,86 +1,13 @@
-// import React, { useState } from 'react';
-// import {
-//     User, Briefcase, Wallet, GraduationCap, Award,
-//     Building, Clock, ShieldCheck, Search, Save,
-//     Trash2, X, ArrowRight, ChevronDown
-// } from 'lucide-react';
-// import { InputField, SelectField, DateField } from './FormElements';
 
-// export const AppoinmentTab = () => {
-//     return (
-//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-//             {/* Right Column: Appointment Details */}
-//             <div className="space-y-6 lg:col-span-2">
-//                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-//                     <DateField label="تاریخ تقرری " />
-//                     <DateField label="تاریخ شمولیت " />
-
-//                     <SelectField
-//                         label="عہدہ "
-//                         options={["استاد", "ناظم", "قاری", "محرر", "خادم"]}
-//                     />
-
-//                     <SelectField
-//                         label="گریڈ "
-//                         options={["Grade A", "Grade B", "Grade C", "Special"]}
-//                     />
-
-//                     <div className="sm:col-span-2">
-//                         <SelectField
-//                             label="ملازمت کی نوعیت "
-//                             options={["مستقل ", "عارضی (Probation)", "کونٹریکٹ (Contract)", "پارٹ ٹائم"]}
-//                         />
-//                     </div>
-
-//                     <InputField label="تعیناتی مقام " placeholder="برانچ یا دفتر کا نام" />
-//                     <SelectField label="رپورٹنگ آفیسر" options={["ناظم اعلٰی", "ہیڈ آف ڈیپارٹمنٹ", "پرنسپل"]} />
-
-//                 </div>
-//             </div>
-
-//             {/* Left Column: Status & Contract Info */}
-//             <div className="space-y-6 bg-[var(--color-input)] p-6 rounded-[2.5rem] border border-[var(--color-border)] h-fit shadow-inner">
-//                 <h3 className="text-sm font-black text-[var(--color-primary)] uppercase tracking-widest border-r-4 border-[var(--color-primary)] pr-3 mb-4">اضافی تفصیلات</h3>
-
-//                 <InputField label="پروڈکشن آئی ڈی " placeholder="انگوٹھے کا نشان آئی ڈی" isDark />
-
-//                 <div className="space-y-2">
-//                     <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">ملازمت کی حیثیت </label>
-//                     <div className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl">
-//                         <div className="flex items-center justify-between">
-//                             <span className="font-bold text-emerald-500">برسرِروزگار </span>
-//                             <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-//                         </div>
-//                     </div>
-//                 </div>
-
-//                 <div className="pt-4 border-t border-[var(--color-border)] space-y-4">
-//                     <InputField label="نوٹس " placeholder="کوئی خاص ہدایت یا بات" isDark />
-//                     <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
-//                         <div className="text-amber-500 mt-1">⚠️</div>
-//                         <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
-//                             تقرری کی تفصیلات تبدیل کرنے سے ملازم کی پرانی ہسٹری محفوظ رہے گی۔ براہ کرم ڈیٹا چیک کر کے سیو کریں۔
-//                         </p>
-//                     </div>
-//                 </div>
-//             </div>
-
-//         </div>
-//     )
-// }
 import React from 'react';
 import { Search, Save, Trash2, X, ArrowRight, ChevronDown } from 'lucide-react';
 import { InputField, SelectField, DateField } from './FormElements';
 
 export const AppoinmentTab = () => {
     return (
-        /* 'grid-cols-1' default hai, 'lg:grid-cols-3' sirf bari screen ke liye */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-            {/* Right Column: Appointment Details */}
-            {/* 'lg' se pehle ye full width rahega (bilkul sm ki tarah) */}
+           
             <div className="lg:col-span-2 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
 
@@ -89,7 +16,7 @@ export const AppoinmentTab = () => {
 
                     <SelectField
                         label="عہدہ"
-                        options={["استاد", "ناظم", "قاری", "محرر", "خادم"]}
+                        options={["استاد", "ناظم", "قاری", "محرر", "خادم","دیگر"]}
                     />
 
                     <SelectField
