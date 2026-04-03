@@ -36,6 +36,7 @@ export const AppRoutes = () => {
 
 
 
+
         {/* <Route path="exams" element={<Exams />} />
           <Route path="scholarship" element={<Scholarship />} />
           <Route path="finance" element={<Finance />} />

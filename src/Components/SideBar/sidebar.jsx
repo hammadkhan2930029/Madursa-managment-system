@@ -104,7 +104,11 @@ export const SideBar = () => {
             icon: UserCheck,
             subMenu: [
                 { id: 't_list', label: 'فہرست اساتذہ', path: '/teachers/list' },
-                { id: 't_attendance', label: 'حاضری', path: '/teachers/attendance' }
+                // { id: 't_details', label: 'تفصیل', path: '/teachers/details' },
+
+                { id: 't_attendance', label: 'حاضری', path: '/teachers/attendance' },
+
+                
             ]
         },
         {
