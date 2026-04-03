@@ -14,15 +14,14 @@ import { Dashboard } from '../Pages/Dashboard/dashboard';
 
 // Modular Routes Imports
 import { StudentRoutes } from './StudentRoutes';
-// import { TeacherRoutes } from './TeacherRoutes';
+import { TeacherRoutes } from './TeacherRoutes';
 import { DepartmentRoutes } from './DepartmentRoutes';
 import { ProfileRoutes } from './ProfileRoutes';
 import { CreateBranch } from '../Pages/CreateBranches/CreateBranches'
-import {HRManagement}from '../Pages/HRManagement/HRManagement'
+import { HRManagement } from '../Pages/HRManagement/HRManagement'
 import { SettingRoutes } from './SettingRoutes';
 export const AppRoutes = () => {
   return (
-    // <Router>
     <Routes>
       {/* Main Dashboard Layout */}
       <Route path="/" element={<SideBar />}>
@@ -50,14 +49,13 @@ export const AppRoutes = () => {
         {ProfileRoutes}
         {StudentRoutes}
         {SettingRoutes}
-        {/* {TeacherRoutes} */}
+        {TeacherRoutes}
 
       </Route>
 
       {/* 404 Page */}
       {/* <Route path="*" element={<NotFound />} /> */}
     </Routes>
-    // </Router>
   );
 };
 
