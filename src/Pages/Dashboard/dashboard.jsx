@@ -4,7 +4,6 @@ import {
     TrendingUp, BookOpen
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { HijriDatePicker } from '../../Components/IslamicHijriCalender/calendar';
 
 const lineData = [{ name: 'هفتہ', value: 80 }, { name: 'اتوار', value: 85 }, { name: 'پیر', value: 83 }, { name: 'منگل', value: 91 }, { name: 'بدھ', value: 88 }, { name: 'جمعرات', value: 89 }, { name: 'جمعہ', value: 95 }];
 const pieData = [{ name: 'موصول', value: 75, color: '#00d094' }, { name: 'باقی', value: 25, color: 'var(--color-bg)' }];
@@ -45,7 +44,6 @@ const StatCard = ({ title, value, subValue, icon: Icon, colorClass, borderClass,
 export const Dashboard = () => {
     return (
         <div className="w-full animate-in fade-in duration-700 font-urdu p-4 bg-[var(--color-bg)] min-h-screen text-[var(--color-text)]">
-           {/* <HijriDatePicker/> */}
             {/* 1. Top Core Stats */}
             <div className="flex flex-wrap gap-6 mb-8" dir="rtl">
                 <StatCard title="کل طالب علم" value="350" icon={Users} colorClass="bg-blue-500" borderClass="bg-blue-500" />

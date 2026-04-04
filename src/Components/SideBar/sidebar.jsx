@@ -94,6 +94,8 @@ export const SideBar = () => {
                 { id: 'std_id_card', label: 'آئی ڈی کارڈ بنائیں', path: '/students/create-id-card' },
                 { id: 'std_attendance', label: 'طلبہ کی حاضری', path: '/students/attendance' },
                 { id: 'std_class_asign', label: 'طلبہ کو کلاس میں ایڈ کریں', path: '/students/class_asign' },
+                { id: 'std_schedule ', label: 'نظام الاوقات', path: '/students/schedule' },
+
 
 
             ]
@@ -104,11 +106,12 @@ export const SideBar = () => {
             icon: UserCheck,
             subMenu: [
                 { id: 't_list', label: 'فہرست اساتذہ', path: '/teachers/list' },
-                // { id: 't_details', label: 'تفصیل', path: '/teachers/details' },
-
                 { id: 't_attendance', label: 'حاضری', path: '/teachers/attendance' },
+                { id: 't_schedule ', label: 'نظام الاوقات', path: '/teachers/schedule ' },
+                { id: 't_schedule ', label: 'نظام الاوقات', path: '/teachers/schedule' },
 
-                
+
+
             ]
         },
         {
