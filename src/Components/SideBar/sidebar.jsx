@@ -4,7 +4,7 @@ import {
     BookOpen, Wallet, Settings, LogOut, Search,
     Bell, MessageSquare, Menu, ChevronDown,
     ClipboardList, GraduationCap as ExamIcon, HeartHandshake, Building2,
-    BadgeCent, Library, Store, X, Moon, Sun, UserPlus,
+    BadgeCent, Library, Store, X, Moon, Sun, UserPlus, TrendingUp, TrendingDown, Landmark, BarChart3, Settings2
 } from 'lucide-react';
 import { Avatar } from '@mui/material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
@@ -19,6 +19,7 @@ export const SideBar = () => {
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [openSubMenu, setOpenSubMenu] = useState(null);
+    const [openSubSubMenu, setOpenSubSubMenu] = useState(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isDark, setIsDark] = useState(false);
     //--------------------------------------------------------------------
@@ -114,6 +115,122 @@ export const SideBar = () => {
 
             ]
         },
+
+        //----------------------------------------------------------------------------------------
+        {
+            id: 'finance',
+            label: 'مالیات',
+            icon: Wallet,
+            path: '/finance',
+            subMenu: [
+                // --- Naya Setup Section (Admin Purpose Define karne ke liye) ---
+                {
+                    id: 'finance-setup',
+                    label: 'مالیاتی سیٹ اپ',
+                    icon: Settings2,
+                    path: '/finance/setup',
+                    subSubMenu: [
+                        {
+                            id: 'income-heads-config',
+                            label: 'آمدن اور خرچ ',
+                            path: '/finance/setup/income-expence',
+                            heads: ['Yahan admin naye purpose add kare ga']
+                        },
+                        // {
+                        //     id: 'expense-heads-config',
+                        //     label: 'اخراجات کی اقسام ',
+                        //     path: '/finance/setup/expense-heads',
+                        //     heads: ['Yahan admin naye kharchay define kare ga']
+                        // }
+                    ]
+                },
+                // --- Income Section ---
+                {
+                    id: 'income',
+                    label: 'آمدنی',
+                    icon: TrendingUp,
+                    path: '/finance/income',
+                    subSubMenu: [
+                        {
+                            id: 'fee-collection',
+                            label: 'فیس وصولی',
+                            path: '/finance/income/fee-collection',
+                            heads: ['Monthly Fee', 'Admission Fee', 'Exam Fee', 'Transport Fee', 'Late Fee Fine']
+                        },
+                        {
+                            id: 'other-income',
+                            label: 'دیگر آمدنی',
+                            path: '/finance/income/other-income',
+                            heads: ['Donations', 'Books & Uniform Sale', 'Bank Interest', 'Event Fund']
+                        }
+                    ]
+                },
+                // --- Expenses Section ---
+                {
+                    id: 'expenses',
+                    label: 'اخراجات',
+                    icon: TrendingDown,
+                    path: '/finance/expenses',
+                    subSubMenu: [
+                        {
+                            id: 'payroll',
+                            label: 'تنخواہیں اور اجرت',
+                            path: '/finance/expenses/payroll',
+                            heads: ['Teacher Salaries', 'Staff Wages', 'Bonuses', 'Advanced Salary']
+                        },
+                        {
+                            id: 'operational',
+                            label: 'آپریشنل اخراجات',
+                            path: '/finance/expenses/operational',
+                            heads: ['Electricity Bill', 'Gas & Water', 'Internet & Phone', 'Building Rent']
+                        },
+                        {
+                            id: 'admin-academic',
+                            label: 'تعلیمی و دفتری',
+                            path: '/finance/expenses/admin-academic',
+                            heads: ['Stationery & Printing', 'Marketing & Ads', 'Repair & Maintenance', 'General Supplies']
+                        }
+                    ]
+                },
+                {
+                    id: 'accounts',
+                    label: 'بینک اور کیش',
+                    icon: Landmark,
+                    path: '/finance/accounts',
+                    subSubMenu: [
+                        {
+                            id: 'cash-management',
+                            label: 'کیش مینیجمنٹ',
+                            path: '/finance/accounts/cash-management'
+                        },
+                        {
+                            id: 'bank-management',
+                            label: 'بینک اکاؤنٹس',
+                            path: '/finance/accounts/bank-management'
+                        }
+                    ]
+                },
+                {
+                    id: 'reports_finance',
+                    label: 'رپورٹس اور آڈٹ',
+                    icon: BarChart3,
+                    path: '/finance/reports',
+                    subSubMenu: [
+                        {
+                            id: 'financial-statements',
+                            label: 'مالیاتی گوشوارے',
+                            path: '/finance/reports/financial-statements'
+                        },
+                        {
+                            id: 'defaulters',
+                            label: 'بقایا جات',
+                            path: '/finance/reports/defaulters'
+                        }
+                    ]
+                }
+            ]
+        },
+        //--------------------------------------------------------------------------------------
         {
             id: 'HRManagement',
             label: 'عملہ',
@@ -131,12 +248,6 @@ export const SideBar = () => {
             label: 'وظیفہ',
             icon: BadgeCent,
             path: '/scholarship'
-        },
-        {
-            id: 'finance',
-            label: 'مالیات',
-            icon: Wallet,
-            path: '/finance'
         },
         {
             id: 'reports',
@@ -164,7 +275,15 @@ export const SideBar = () => {
         { id: 'cities', label: 'شہر', path: '/Profile/cities', icon: UserCheck },
     ];
 
-    const toggleSubMenu = (id) => setOpenSubMenu(openSubMenu === id ? null : id);
+    // const toggleSubMenu = (id) => setOpenSubMenu(openSubMenu === id ? null : id);
+    const toggleSubMenu = (id) => {
+        setOpenSubMenu(openSubMenu === id ? null : id);
+        setOpenSubSubMenu(null); // Level 1 change ho to Level 2 reset ho jaye
+    };
+
+    const toggleSubSubMenu = (id) => {
+        setOpenSubSubMenu(openSubSubMenu === id ? null : id);
+    };
     //--------------------------------------------------------------------
     const setting = [
         {
@@ -217,10 +336,12 @@ export const SideBar = () => {
                         <p className="text-[9px] text-[#00d094] font-bold tracking-[0.2em] uppercase">Premium Hub</p>
                     </div>
                 </div>
+                {/* //--------------------------------------------------------------// */}
 
                 <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)] vip-scrollbar px-1 ">
                     {menuItems.map((item) => (
                         <div key={item.id}>
+                            {/* --- Level 1: Main Menu --- */}
                             <div
                                 onClick={() => item.subMenu ? toggleSubMenu(item.id) : (navigate(item.path), setIsSidebarOpen(false))}
                                 className={`flex items-center justify-between p-3.5 rounded-2xl cursor-pointer transition-all ${isActive(item.path) || (item.subMenu && item.subMenu.some(s => isActive(s.path)))
@@ -229,22 +350,50 @@ export const SideBar = () => {
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <item.icon size={20} className={isActive(item.path) ? 'text-white' : 'text-[#00d094]/70'} />
+                                    {item.icon && <item.icon size={20} className={isActive(item.path) ? 'text-white' : 'text-[#00d094]/70'} />}
                                     <span className="text-[13px] font-bold">{item.label}</span>
                                 </div>
                                 {item.subMenu && <ChevronDown size={14} className={`transition-transform duration-300 ${openSubMenu === item.id ? 'rotate-180' : ''}`} />}
                             </div>
 
+                            {/* --- Level 2: Sub Menu --- */}
                             {item.subMenu && openSubMenu === item.id && (
-                                <div className="mt-2 mr-9 space-y-1 border-r border-white/10 pr-2">
+                                <div className="mt-2 mr-6 space-y-1 border-r border-white/10 pr-2">
                                     {item.subMenu.map((sub) => (
-                                        <div
-                                            key={sub.id}
-                                            onClick={() => { navigate(sub.path); setIsSidebarOpen(false); }}
-                                            className={`text-[12px] p-2.5 rounded-xl cursor-pointer flex items-center gap-2 transition-all ${isActive(sub.path) ? 'text-[#00d094] font-bold bg-[#00d094]/5' : 'text-gray-400 hover:text-white'}`}
-                                        >
-                                            <div className={`w-1.5 h-1.5 rounded-full ${isActive(sub.path) ? 'bg-[#00d094] scale-125' : 'bg-gray-600'}`} />
-                                            {sub.label}
+                                        <div key={sub.id} className="perspective-1000">
+                                            <div
+                                                onClick={() => sub.subSubMenu ? toggleSubSubMenu(sub.id) : (navigate(sub.path), setIsSidebarOpen(false))}
+                                                className={`text-[12px] p-2.5 rounded-xl  cursor-pointer flex items-center justify-between transition-all ${isActive(sub.path) || (sub.subSubMenu && sub.subSubMenu.some(ss => isActive(ss.path)))
+                                                    ? 'text-[#00d094] font-bold bg-[#00d094]/5'
+                                                    : 'text-gray-400 hover:text-white'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${isActive(sub.path) ? 'bg-[#00d094] scale-125' : 'bg-gray-600'}`} />
+                                                     {sub.icon && <sub.icon size={20} className={isActive(sub.path) ? 'text-white' : 'text-[#00d094]/70'} />}
+                                                    {sub.label}
+                                                </div>
+                                                {sub.subSubMenu && <ChevronDown size={12} className={`transition-transform duration-200 ${openSubSubMenu === sub.id ? 'rotate-180' : ''}`} />}
+                                            </div>
+
+                                            {/* --- Level 3: Sub-Sub Menu (Finance Heads) --- */}
+                                            {sub.subSubMenu && openSubSubMenu === sub.id && (
+                                                <div className="mt-1 mr-4 space-y-1 bg-[#00d094]/5 border-r-3 border-[#00d094] pr-3 animate-in fade-in zoom-in-95 duration-200">
+                                                    {sub.subSubMenu.map((subSub) => (
+                                                        <div
+                                                            key={subSub.id}
+                                                            onClick={() => {
+                                                                if (subSub.path) navigate(subSub.path);
+                                                                setIsSidebarOpen(false);
+                                                            }}
+                                                            className="text-[12px] p-2 text-gray-400 hover:text-[#00d094] hover:bg-[#00d094]/9 rounded-lg cursor-pointer transition-all flex items-center gap-2"
+                                                        >
+                                                            <span >•</span>
+                                                            {subSub.label}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -252,6 +401,10 @@ export const SideBar = () => {
                         </div>
                     ))}
                 </div>
+                {/* //--------------------------------------------------------------// */}
+
+
+               
                 {/* --------------------------------------setting---------------------------------------------------- */}
                 <div className={`fixed top-1/2 -translate-y-1/2 z-[70] transition-all duration-500 ${isSidebarOpen ? 'right-64' : 'right-0 md:right-64'}`}>
                     <div className="relative group">

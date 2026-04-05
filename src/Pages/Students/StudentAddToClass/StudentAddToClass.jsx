@@ -44,7 +44,7 @@ export const StudentAddToClass = () => {
             
             {/* Header */}
             <div className="bg-[var(--color-surface)] p-6 rounded-[2rem] border border-[var(--color-border)] shadow-sm">
-                <h2 className="text-3xl font-black text-[var(--color-primary)]">کلاس میں طالب علم کا اندراج</h2>
+                <h2 className="text-3xl font-black text-[var(--color-text)]">کلاس میں طالب علم کا اندراج</h2>
                 <p className="text-xs text-[var(--color-text-muted)] font-bold mt-7">طالب علم کو تلاش کریں اور سیشن/کلاس الاٹ کریں</p>
             </div>
 

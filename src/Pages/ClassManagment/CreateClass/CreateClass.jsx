@@ -40,7 +40,7 @@ export const CreateClasses = () => {
             >
                 <div className="text-right">
                     <h2 className="text-2xl font-black text-[var(--color-text)] tracking-tight">جماعت مینجمنٹ</h2>
-                    <p className="text-sm text-[var(--color-text-muted)] font-medium tracking-wide">کل فہرست: {classes.length}</p>
+                    <p className="text-sm text-[var(--color-text-muted)] font-medium tracking-wide mt-4">کل فہرست: {classes.length}</p>
                 </div>
                 <button
                     onClick={() => isFormOpen ? closeForm() : setIsFormOpen(true)}

@@ -47,8 +47,8 @@ export const AttendancePage = () => {
             {/* Header: Compact layout for both mobile & md */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--color-surface)] p-6 rounded-[2rem] shadow-sm border border-[var(--color-border)]">
                 <div>
-                    <h2 className="text-3xl font-black text-[var(--color-primary)]">روزانہ حاضری</h2>
-                    <p className="text-xs text-[var(--color-text-muted)] font-bold mt-2">طالب علموں کی حاضری کا نظام</p>
+                    <h2 className="text-4xl font-black text-[var(--color-text)]">روزانہ حاضری</h2>
+                    <p className="text-xs text-[var(--color-text-muted)] font-bold mt-4">طالب علموں کی حاضری کا نظام</p>
                 </div>
 
                 {/* Calendar Icon ki jagah DateField yahan shift kar di */}

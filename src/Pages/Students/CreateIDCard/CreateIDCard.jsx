@@ -31,7 +31,7 @@ export const CreateIdCard = () => {
         <div className="min-h-screen bg-[var(--color-bg)] p-4 md:p-8" dir="rtl">
             {/* --- Ye section Print mein hide ho jayega --- */}
             <div className="max-w-6xl mx-auto bg-[var(--color-surface)] p-6 rounded-[2rem] shadow-xl border border-[var(--color-border)] mb-10 print:hidden">
-                <h2 className="text-xl font-black mb-6 flex items-center gap-3 text-[var(--color-primary)]">
+                <h2 className="text-2xl font-black mb-6 flex items-center gap-3 text-[var(--color-text)]">
                     <CreditCard className="text-[#00d094]" /> آئی ڈی کارڈ جنریٹر
                 </h2>
 

@@ -31,7 +31,7 @@ export const CreateSections = () => {
             >
                 <div className="text-right">
                     <h2 className="text-2xl font-black text-[var(--color-text)] tracking-tight">جماعت کا سیکشن</h2>
-                    <p className="text-sm text-[var(--color-text-muted)] font-medium text-right">کل ریکارڈ: {sections.length}</p>
+                    <p className="text-sm text-[var(--color-text-muted)] font-medium text-right mt-4">کل ریکارڈ: {sections.length}</p>
                 </div>
                 <button 
                     onClick={() => isFormOpen ? closeForm() : setIsFormOpen(true)}

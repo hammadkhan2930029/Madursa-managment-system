@@ -30,7 +30,7 @@ export const CreateSessions = () => {
             >
                 <div className="text-right">
                     <h2 className="text-2xl font-black text-[var(--color-text)] tracking-tight">تعلیمی سیشن</h2>
-                    <p className="text-sm text-[var(--color-text-muted)] font-medium text-right">کل ریکارڈ: {sessions.length}</p>
+                    <p className="text-sm text-[var(--color-text-muted)] font-medium text-right mt-5">کل ریکارڈ: {sessions.length}</p>
                 </div>
                 <button 
                     onClick={() => isFormOpen ? closeForm() : setIsFormOpen(true)}
