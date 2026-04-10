@@ -1,47 +1,66 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     UserPlus, Users, Calendar, Wallet, UserCheck,
     TrendingUp, BookOpen
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+//--------------------------------------------------------------------------
 
 const lineData = [{ name: 'هفتہ', value: 80 }, { name: 'اتوار', value: 85 }, { name: 'پیر', value: 83 }, { name: 'منگل', value: 91 }, { name: 'بدھ', value: 88 }, { name: 'جمعرات', value: 89 }, { name: 'جمعہ', value: 95 }];
 const pieData = [{ name: 'موصول', value: 75, color: '#00d094' }, { name: 'باقی', value: 25, color: 'var(--color-bg)' }];
 
-const StatCard = ({ title, value, subValue, icon: Icon, colorClass, borderClass, isIncome }) => (
-    <div
-        className="p-6 rounded-[2rem] flex-1 min-w-[240px] bg-[var(--color-surface)] border border-[var(--color-border)] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden group shadow-sm"
-    >
-        {/* Background Decorative Icon */}
-        <div className="absolute -right-4 -top-4 w-20 h-20 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity text-[var(--color-text)]">
-            <Icon size={80} />
-        </div>
+//--------------------------------------------------------------------------
+const StatCard =
+    (
+        {
+            title,
+            value,
+            subValue,
+            icon: Icon,
+            colorClass,
+            borderClass,
+            isIncome
+        }) => (
 
-        <div className="flex justify-between items-start relative z-10">
-            <div className={`p-3 rounded-2xl ${colorClass} bg-gradient-to-br transition-transform group-hover:scale-110 duration-500 shadow-lg shadow-current/20`}>
-                <Icon size={22} className="text-white" />
+        <motion.div initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 rounded-[2rem] flex-1 min-w-[240px] bg-[var(--color-surface)] border border-[var(--color-border)] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden group shadow-sm">
+            {/* Background Decorative Icon */}
+            <div className="absolute -right-4 -top-4 w-20 h-20 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity text-[var(--color-text)]">
+                <Icon size={80} />
             </div>
 
-            <div className="text-right">
-                <p className="text-[var(--color-text-muted)] text-[12px] mb-1 font-bold font-urdu tracking-widest uppercase">{title}</p>
-                <h3 className={`font-black text-[var(--color-text)] tracking-tight ${isIncome ? 'text-lg' : 'text-2xl'}`}>
-                    {value}
-                </h3>
-            </div>
-        </div>
+            <div className="flex justify-between items-start relative z-10">
+                <div className={`p-3 rounded-2xl ${colorClass} bg-gradient-to-br transition-transform group-hover:scale-110 duration-500 shadow-lg shadow-current/20`}>
+                    <Icon size={22} className="text-white" />
+                </div>
 
-        {subValue && (
-            <div className="mt-4 pt-3 border-t border-[var(--color-border)] relative z-10">
-                <p className="text-[11px] text-[var(--color-text-muted)] font-medium font-urdu">{subValue}</p>
+                <div className="text-right">
+                    <p className="text-[var(--color-text-muted)] text-[12px] mb-1 font-bold font-urdu tracking-widest uppercase">{title}</p>
+                    <h3 className={`font-black text-[var(--color-text)] tracking-tight ${isIncome ? 'text-lg' : 'text-2xl'}`}>
+                        {value}
+                    </h3>
+                </div>
             </div>
-        )}
 
-        {/* Bottom Accent Line */}
-        <div className={`absolute bottom-0 right-0 left-0 h-1.5 ${borderClass} opacity-80`} />
-    </div>
-);
+            {subValue && (
+                <div className="mt-4 pt-3 border-t border-[var(--color-border)] relative z-10">
+                    <p className="text-[11px] text-[var(--color-text-muted)] font-medium font-urdu">{subValue}</p>
+                </div>
+            )}
+
+            {/* Bottom Accent Line */}
+            <div className={`absolute bottom-0 right-0 left-0 h-1.5 ${borderClass} opacity-80`} />
+        </motion.div>
+    );
+//--------------------------------------------------------------------------
 
 export const Dashboard = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
     return (
         <div className="w-full animate-in fade-in duration-700 font-urdu p-4 bg-[var(--color-bg)] min-h-screen text-[var(--color-text)]">
             {/* 1. Top Core Stats */}
@@ -53,7 +72,7 @@ export const Dashboard = () => {
 
             {/* 2. Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" dir="rtl">
-                <div
+                <motion.div
                     className="min-h-[450px] bg-[var(--color-surface)] p-8 rounded-[3rem] border border-[var(--color-border)] flex flex-col justify-between shadow-sm"
                 >
                     <div className="flex flex-row justify-between items-center mb-6 ">
@@ -81,9 +100,9 @@ export const Dashboard = () => {
                             <div className="w-3 h-3 rounded-full bg-[#00d094] shadow-[0_0_15px_rgba(0,208,148,0.5)]" />
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div
+                <motion.div
                     className="bg-[var(--color-surface)] p-8 rounded-[3rem] border border-[var(--color-border)] flex flex-col min-h-[450px] shadow-sm"
                 >
                     <div className="flex justify-between items-center mb-10">
@@ -133,12 +152,12 @@ export const Dashboard = () => {
                             />
                         </LineChart>
                     </ResponsiveContainer>
-                </div>
+                </motion.div>
             </div>
 
             {/* 3. Quick Actions & Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8" dir="rtl">
-                <div
+                <motion.div
                     className="lg:col-span-5 bg-[var(--color-surface)] p-8 rounded-[3rem] border border-[var(--color-border)] shadow-sm"
                 >
                     <h3 className="text-lg font-bold text-[var(--color-text)] mb-6">کوئیک ایکشنز</h3>
@@ -155,9 +174,9 @@ export const Dashboard = () => {
                             </button>
                         ))}
                     </div>
-                </div>
+                </motion.div>
 
-                <div
+                <motion.div
                     className="lg:col-span-7 bg-[var(--color-surface)] p-8 rounded-[3rem] border border-[var(--color-border)] shadow-sm"
                 >
                     <h3 className="text-lg font-bold text-[var(--color-text)] mb-6">تازہ ترین سرگرمیاں</h3>
@@ -178,16 +197,19 @@ export const Dashboard = () => {
                             </div>
                         ))}
                     </div>
-                </div>
+                </motion.div>
             </div>
 
             {/* 4. Bottom Financial Cards */}
-            <div className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" dir="rtl">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" dir="rtl">
                 <StatCard title="قابل ادائیگی" value="PKR 250,000" subValue="آج: 8 مکمل" icon={BookOpen} colorClass="bg-blue-500" borderClass="bg-blue-500" />
                 <StatCard title="قابل وصولی" value="PKR 38,000" subValue="87% حاضری" icon={Users} colorClass="bg-emerald-500" borderClass="bg-emerald-500" />
                 <StatCard title="کل خرچ" value="PKR 33,000" subValue="78% اوسط حاضری" icon={TrendingUp} colorClass="bg-indigo-500" borderClass="bg-indigo-500" />
                 <StatCard title="کل آمدنی" value="PKR 803,000" subValue="اس مہینے 12% اضافہ" icon={Wallet} colorClass="bg-orange-500" borderClass="bg-orange-500" isIncome={true} />
-            </div>
+            </motion.div>
 
         </div>
     );

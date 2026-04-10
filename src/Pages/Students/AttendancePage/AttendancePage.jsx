@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SelectField, DateField } from '../../../Components/HR/FormElements';
 import { Search, Save, Calendar } from 'lucide-react';
 
 export const AttendancePage = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
     const [searchFilters, setSearchFilters] = useState({
         session: '',
         className: '',

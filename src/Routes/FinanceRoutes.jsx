@@ -72,6 +72,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // // Setup Components
 // import { ExpenseHeadsSetup } from '../Pages/Finance/Settings/ExpenceHeads/ExpenceHeads';
 import { FinanceHeadsSetup } from '../Pages/Finance/Settings/FinanceHeadsSetup/FinanceHeadsSetup';
+import { FundCollection } from '../Pages/Finance/Incomes/FundCollection/FundCollection';
 export const FinanceRoutes = () => {
     return (
         <Routes>
@@ -82,12 +83,12 @@ export const FinanceRoutes = () => {
                 {/* Agar koi sirf /finance/setup par aye */}
                 <Route index element={<Navigate to="income-expence" />} />
             </Route>
-            
+
             {/* Income Group */}
-            {/* <Route path="income">
-                <Route path="fee-collection" element={<FeeCollection />} />
-                <Route index element={<Navigate to="fee-collection" />} />
-            </Route> */}
+            <Route path="income">
+                <Route path="fund-collection" element={<FundCollection />} />
+                {/* <Route index element={<Navigate to="fee-collection" />} /> */}
+            </Route>
 
             {/* Default redirect: /finance -> /finance/income/fee-collection */}
             {/* <Route index element={<Navigate to="income/fee-collection" />} /> */}

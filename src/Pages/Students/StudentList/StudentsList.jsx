@@ -1,14 +1,13 @@
-
-
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Search, Edit3, Trash2, UserPlus,
     GraduationCap, School, Users, Hash, Phone
 } from 'lucide-react';
-import { InputField } from '../../../Components/HR/FormElements';
 
 export const StudentList = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
     const [students, setStudents] = useState([
         { idNo: "STU-001", name: "محمد احمد", fatherName: "عبدالرحمن", campus: "مین کیمپس", class: "ہشتم", section: "A", familyNo: "F-501" },
         { idNo: "STU-002", name: "علی خان", fatherName: "عمران خان", campus: "گلشن کیمپس", class: "ہفتم", section: "B", familyNo: "F-702" },

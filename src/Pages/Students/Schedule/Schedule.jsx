@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
     Calendar,
     Clock,
@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 
 export const StudentScheduleManager = () => {
+      useEffect(() => {
+            window.scrollTo(0, 0)
+        }, [])
 
     const [selectLayout, setSelectLayout] = useState(2)
     const [schedules, setSchedules] = useState([]);

@@ -1,13 +1,16 @@
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Camera, Save, User, MapPin, Phone, BookOpen, HeartPulse, Printer, X, CheckCircle, Search } from 'lucide-react';
 import { Formik, Form, Field } from 'formik';
 import { AppImages } from '../../../Constant/AppImages';
 import { InputField } from "../../../Components/HR/FormElements";
 
 export const AdmissionForm = () => {
+      useEffect(() => {
+            window.scrollTo(0, 0)
+        }, [])
     const [imagePreview, setImagePreview] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [tempValues, setTempValues] = useState({});

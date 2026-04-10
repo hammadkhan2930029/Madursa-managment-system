@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
+//---------------------------------------------------------------------------------------
 
 export const InputField = ({ label, placeholder, isDark, type = "text" }) => (
   <div className="space-y-2">
@@ -7,26 +8,85 @@ export const InputField = ({ label, placeholder, isDark, type = "text" }) => (
     <input
       type={type}
       placeholder={placeholder}
-      className={`w-full p-4 rounded-2xl border outline-none font-bold transition-all focus:ring-4 focus:ring-emerald-500/10 ${
-        isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
-      }`}
+      className={`w-full p-4 rounded-2xl border outline-none font-bold transition-all focus:ring-4 focus:ring-emerald-500/10 ${isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
+        }`}
     />
   </div>
 );
+//---------------------------------------------------------------------------------------
 
 export const SelectField = ({ label, options, isDark }) => (
   <div className="space-y-2 relative">
     <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
     <div className="relative">
-      <select className={`w-full p-4 rounded-2xl border outline-none font-bold appearance-none transition-all ${
-        isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
-      }`}>
+      <select className={`w-full p-4 rounded-2xl border outline-none font-bold appearance-none transition-all ${isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
+        }`}>
         {options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
       </select>
       <ChevronDown size={18} className="absolute left-4 top-4 text-[var(--color-text-muted)] pointer-events-none" />
     </div>
   </div>
 );
+//---------------------------------------------------------------------------------------
+
+export const BankSearchField = ({ label, value, onChange, options, isDark, onSelect }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  // Filtered banks based on typing
+  const filtered = options.filter(opt =>
+    opt.toLowerCase().includes(value.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-2 relative">
+      <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 200)} // Delay taake click register ho sakay
+          placeholder="بینک تلاش کریں..."
+          className={`w-full p-4 rounded-2xl border outline-none font-bold transition-all ${isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
+            }`}
+        />
+        <ChevronDown size={18} className="absolute left-4 top-4 text-[var(--color-text-muted)] pointer-events-none" />
+
+        {/* Search Results Dropdown */}
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar">
+            {filtered.length > 0 ? (
+              filtered.map((opt, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    onSelect(opt);
+                    setIsOpen(false);
+                  }}
+                  className="p-4 hover:bg-[var(--color-primary)] hover:text-white cursor-pointer transition-colors font-bold text-sm border-b border-[var(--color-border)] last:border-0 text-right"
+                >
+                  {opt}
+                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-[var(--color-text-muted)] text-sm">
+                کوئی بینک نہیں ملا
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+//---------------------------------------------------------------------------------------
 
 export const DateField = ({ label }) => (
   <div className="space-y-2">
@@ -34,6 +94,7 @@ export const DateField = ({ label }) => (
     <input type="date" className="w-full p-4 rounded-2xl border bg-[var(--color-input)] border-transparent outline-none font-bold focus:border-[var(--color-primary)] transition-all" />
   </div>
 );
+//---------------------------------------------------------------------------------------
 
 export const RadioButton = ({ label, name, defaultChecked }) => (
   <label className="flex items-center gap-2 cursor-pointer group">

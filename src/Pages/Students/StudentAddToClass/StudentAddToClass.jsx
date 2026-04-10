@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { SelectField, InputField } from '../../../Components/HR/FormElements';
 import { Search, PlusCircle, UserPlus, Trash2, CheckCircle2 } from 'lucide-react';
 
 export const StudentAddToClass = () => {
+      useEffect(() => {
+            window.scrollTo(0, 0)
+        }, [])
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [filters, setFilters] = useState({ session: '', className: '', section: '' });

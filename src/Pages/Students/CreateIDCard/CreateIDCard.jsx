@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, CreditCard, Layout, Smartphone, User, Printer, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppImages } from '../../../Constant/AppImages';
 import { InputField } from '../../../Components/HR/FormElements';
 
 export const CreateIdCard = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
     const [searchId, setSearchId] = useState('');
     const [layout, setLayout] = useState('horizontal');
     const [studentData, setStudentData] = useState(null);

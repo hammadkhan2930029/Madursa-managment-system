@@ -209,7 +209,7 @@ export const FinanceHeadsSetup = () => {
     };
 
     return (
-        <div className="p-6 min-h-screen text-white " style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="p-6 min-h-screen text-[var(--color-text)] bg-[var(--color-bg)]" >
             
             {/* Top Navigation & Toggle */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 p-6 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]"
@@ -226,7 +226,7 @@ export const FinanceHeadsSetup = () => {
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 w-full md:w-auto">
+                <div className="flex bg-black/40 p-1.5 rounded-2xl border border-[var(--color-border)] w-full md:w-auto">
                     <button 
                         onClick={() => setActiveTab('expense')}
                         className={`flex-1 md:w-32 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'expense' ? 'bg-[var(--color-primary)] text-[var(--color-bg)]' : 'text-gray-500 hover:text-white'}`}
@@ -241,24 +241,21 @@ export const FinanceHeadsSetup = () => {
                     </button>
                 </div>
 
-                <button onClick={handleSave} className="w-full md:w-auto flex items-center justify-center gap-2 font-bold px-10 py-3 rounded-2xl transition-all shadow-lg active:scale-95"
-                        style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}>
+                <button onClick={handleSave} className="bg-[var(--color-primary)] text-[var(--color-bg)] w-full md:w-auto flex items-center justify-center gap-2 font-bold px-10 py-3 rounded-2xl transition-all shadow-lg active:scale-95">
                     <Save size={20} /> محفوظ کریں
                 </button>
             </div>
 
             {/* Dynamic Input Form */}
-            <div className="max-w-5xl mx-auto space-y-4 mb-12">
+            <div className="max-w-6xl mx-auto space-y-4 mb-12">
                 <h2 className="text-lg font-semibold mb-4 text-right border-r-4 border-[var(--color-primary)] pr-3">
                     نئی {activeTab === 'income' ? 'آمدنی' : 'اخراجات'} شامل کریں
                 </h2>
                 
                 {(activeTab === 'income' ? incomeHeads : expenseHeads).map((item, index) => (
-                    <div key={item.id} className="flex flex-row-reverse items-center gap-4 p-4 rounded-2xl border animate-in slide-in-from-top-4 duration-300"
-                         style={{ backgroundColor: 'var(--color-surface)', borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <div key={item.id} className="bg-[var(--color-surface)] flex flex-row-reverse items-center gap-4 p-4 rounded-2xl border border-[rgba(255,255,255,0.05)] animate-in slide-in-from-top-4 duration-300">
                         
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
-                             style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}>
+                        <div className="w-8 h-8 bg-[var(--color-primary)]  rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-[var(--color-bg)]">
                             {index + 1}
                         </div>
                         
@@ -273,7 +270,7 @@ export const FinanceHeadsSetup = () => {
                             {activeTab === 'expense' ? (
                                 <>
                                     <select dir="rtl" value={item.category} onChange={(e) => handleInputChange(item.id, 'category', e.target.value)}
-                                            className="border rounded-xl p-3 text-sm outline-none bg-black text-right focus:border-[var(--color-primary)] border-white/10">
+                                            className="border bg-black/20 rounded-xl p-3 text-sm outline-none bg-black text-right focus:border-[var(--color-primary)] border-white/10">
                                         <option value="General">عام اخراجات</option>
                                         <option value="Operational">کاروباری</option>
                                         <option value="Fixed Asset">مستقل اثاثے</option>
@@ -304,7 +301,7 @@ export const FinanceHeadsSetup = () => {
             </div>
 
             {/* List Table Section */}
-            <div className="max-w-5xl mx-auto space-y-4">
+            <div className="max-w-6xl mx-auto space-y-4">
                 <h2 className="text-lg font-semibold mb-4 text-right border-r-4 border-blue-500 pr-3">موجودہ فہرست ({activeTab === 'income' ? 'آمدنی' : 'اخراجات'})</h2>
                 <div className="overflow-hidden rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--color-surface)' }}>
                     <table className="w-full text-right" dir="rtl">
@@ -345,7 +342,7 @@ export const FinanceHeadsSetup = () => {
             </div>
 
             {/* Hint Box */}
-            <div className="mt-12 max-w-5xl mx-auto flex flex-row-reverse items-center gap-4 p-5 rounded-3xl border border-white/5 bg-white/5">
+            <div className="mt-12 max-w-6xl mx-auto flex flex-row items-center gap-4 p-5 rounded-3xl border border-white/5 bg-white/5">
                 <AlertCircle size={24} className="text-gray-500 shrink-0" />
                 <p className="text-xs text-gray-500 text-right leading-relaxed">
                     <span className="font-bold text-[var(--color-primary)]">پیشہ ورانہ مشورہ:</span> آمدنی اور اخراجات کو صحیح طرح کیٹیگریز میں تقسیم کرنے سے آپ کو مہینے کے آخر میں "Profit & Loss" رپورٹ سمجھنے میں آسانی ہوگی۔

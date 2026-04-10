@@ -96,8 +96,7 @@ export const SideBar = () => {
                 { id: 'std_attendance', label: 'طلبہ کی حاضری', path: '/students/attendance' },
                 { id: 'std_class_asign', label: 'طلبہ کو کلاس میں ایڈ کریں', path: '/students/class_asign' },
                 { id: 'std_schedule ', label: 'نظام الاوقات', path: '/students/schedule' },
-
-
+                { id: 'std_fees ', label: 'فیس جینریشن', path: '/students/fees' },
 
             ]
         },
@@ -153,16 +152,16 @@ export const SideBar = () => {
                     subSubMenu: [
                         {
                             id: 'fee-collection',
-                            label: 'فیس وصولی',
-                            path: '/finance/income/fee-collection',
+                            label: 'فنڈ وصولی',
+                            path: '/finance/income/fund-collection',
                             heads: ['Monthly Fee', 'Admission Fee', 'Exam Fee', 'Transport Fee', 'Late Fee Fine']
                         },
-                        {
-                            id: 'other-income',
-                            label: 'دیگر آمدنی',
-                            path: '/finance/income/other-income',
-                            heads: ['Donations', 'Books & Uniform Sale', 'Bank Interest', 'Event Fund']
-                        }
+                        // {
+                        //     id: 'other-income',
+                        //     label: 'دیگر آمدنی',
+                        //     path: '/finance/income/other-income',
+                        //     heads: ['Donations', 'Books & Uniform Sale', 'Bank Interest', 'Event Fund']
+                        // }
                     ]
                 },
                 // --- Expenses Section ---
