@@ -73,6 +73,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // import { ExpenseHeadsSetup } from '../Pages/Finance/Settings/ExpenceHeads/ExpenceHeads';
 import { FinanceHeadsSetup } from '../Pages/Finance/Settings/FinanceHeadsSetup/FinanceHeadsSetup';
 import { FundCollection } from '../Pages/Finance/Incomes/FundCollection/FundCollection';
+import { FundList } from '../Pages/Finance/Incomes/FundList/FundList';
+import { SalaryEntry } from '../Pages/Finance/Expence/Salary/salary'
+
 export const FinanceRoutes = () => {
     return (
         <Routes>
@@ -87,7 +90,14 @@ export const FinanceRoutes = () => {
             {/* Income Group */}
             <Route path="income">
                 <Route path="fund-collection" element={<FundCollection />} />
+                <Route path="fund-list" element={<FundList />} />
+
                 {/* <Route index element={<Navigate to="fee-collection" />} /> */}
+            </Route>
+            {/* Income Group */}
+            <Route path="expenses">
+                <Route path="payroll" element={<SalaryEntry />} />
+
             </Route>
 
             {/* Default redirect: /finance -> /finance/income/fee-collection */}

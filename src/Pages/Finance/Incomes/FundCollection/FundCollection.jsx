@@ -3,7 +3,7 @@ import { Save, Copy, Plus, Trash2, User, Phone, Wallet, Landmark, FileText, Prin
 import { motion, AnimatePresence } from 'framer-motion';
 import { BankSearchField, DateField, InputField } from '../../../../Components/HR/FormElements';
 import { pakistanBanks } from '../../../../Constant/AllBanks';
-
+import {AppImages} from '../../../../Constant/AppImages'
 export const FundCollection = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [donorInfo, setDonorInfo] = useState({ name: '', careOf: '', number: '' });
@@ -87,11 +87,18 @@ export const FundCollection = () => {
                         <span>وقتِ پرنٹ: ${currentDate} | ${currentTime}</span>
                         <span dir="ltr">ID: ${donorInfo.name ? donorInfo.name.substring(0, 5) : '---'}</span>
                     </div>
-
-                    <div class="text-center mb-4 border-b-2 border-green-700 pb-2">
-                        <h1 class="urdu-font text-xl font-bold text-green-800">جامعہ مدرسہ (آپ کا نام)</h1>
-                        <p class="text-[10px] text-gray-600 tracking-widest">E-Receipt Acknowledgment</p>
-                        <span class="urdu-font text-xs bg-green-700 text-white px-3 py-1 rounded-full inline-block mt-1">الیکٹرانک رسیدِ عطیات</span>
+                    <div>
+                       <div class="text-center mb-4 border-b-2 border-green-700 pb-2">
+                             <h1 class="urdu-font text-xl font-bold text-green-800">جامعہ مدرسہ (آپ کا نام)</h1>
+                             <span class="mt-3 urdu-font text-xs bg-green-700 text-white px-3 py-3 rounded-full inline-block mt-1">الیکٹرانک رسیدِ عطیات</span>
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
+                        <img 
+                             src={${AppImages.logo} 
+                             alt="Watermark Logo" 
+                             class="w-1/2 opacity-5 -rotate-12 object-contain"
+                          />
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 mb-3">

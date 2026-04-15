@@ -156,6 +156,12 @@ export const SideBar = () => {
                             path: '/finance/income/fund-collection',
                             heads: ['Monthly Fee', 'Admission Fee', 'Exam Fee', 'Transport Fee', 'Late Fee Fine']
                         },
+                          {
+                            id: 'fund-list',
+                            label: 'عطیات کی فہرست',
+                            path: '/finance/income/fund-list',
+                            heads: ['Donations', 'Books & Uniform Sale', 'Bank Interest', 'Event Fund']
+                        }
                         // {
                         //     id: 'other-income',
                         //     label: 'دیگر آمدنی',
