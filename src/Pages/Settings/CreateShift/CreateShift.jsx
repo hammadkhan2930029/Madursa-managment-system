@@ -3,7 +3,7 @@ import { Clock, Plus, Edit2, Trash2, Calendar, Sun, Moon, Coffee } from 'lucide-
 import { InputField } from '../../../Components/HR/FormElements';
 
 export const ShiftManagement = () => {
-    const [shifts, setShifts] = useState([
+    const [shifts] = useState([
         { id: 1, name: 'Morning Shift', start: '08:00 AM', end: '02:00 PM', type: 'Morning' },
         { id: 2, name: 'Afternoon Shift', start: '02:00 PM', end: '08:00 PM', type: 'Afternoon' },
     ]);

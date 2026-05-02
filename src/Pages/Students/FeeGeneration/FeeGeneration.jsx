@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Printer, Eye, CreditCard, Filter, CheckCircle, Clock } from 'lucide-react';
+/* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,7 +13,7 @@ export const FeesCollection = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('');
 
-    const [students, setStudents] = useState([
+    const [students] = useState([
         { id: 'MD-101', name: 'محمد احمد', class: 'حفظ', status: 'paid', amount: 1500 },
         { id: 'MD-102', name: 'علی رضا', class: 'ناظرہ', status: 'unpaid', amount: 1000 },
         { id: 'MD-103', name: 'عمران خان', class: 'درجہ اول', status: 'unpaid', amount: 2000 },
@@ -89,7 +90,7 @@ export const FeesCollection = () => {
                                 onChange={(e) => setSelectedMonth(e.target.value)}
                             >
                                 <option value="">مہینہ منتخب کریں...</option>
-                                {monthsArrayOfObjects.map((item, index) => {
+                                {monthsArrayOfObjects.map((item) => {
                                     return (
                                         <option value="1" >{item.name}</option>
 

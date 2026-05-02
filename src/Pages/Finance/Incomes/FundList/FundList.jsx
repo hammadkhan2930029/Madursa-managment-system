@@ -55,25 +55,25 @@ export const FundList = () => {
                     <div className="flex flex-row items-center gap-2 w-full lg:w-auto">
                         <div className="flex-1 lg:flex-none">
                             <DateField
-                                type="date"
-                                // className="w-full px-2 py-3 rounded-xl text-xs focus:outline-none border border-[var(--color-border)] bg-[var(--color-input)] text-[var(--color-text-main)] [color-scheme:dark] dark:[color-scheme:dark]"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
+                                placeholder="شروع"
+                                size="sm"
                             />
                         </div>
                         <span className="text-[var(--color-text-muted)] text-[10px] font-bold">تا</span>
                         <div className="flex-1 lg:flex-none">
                             <DateField
-                                type="date"
-                                // className="w-full px-2 py-3 rounded-xl text-xs focus:outline-none border border-[var(--color-border)] bg-[var(--color-input)] text-[var(--color-text-main)] [color-scheme:dark] dark:[color-scheme:dark]"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
+                                placeholder="اختتام"
+                                size="sm"
                             />
                         </div>
                     </div>
 
                     {/* Search Button */}
-                    <button className="w-full lg:w-auto px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm bg-[var(--color-primary)] text-[#0b1120] hover:bg-[var(--color-primary-hover)]">
+                    <button className="w-full lg:w-auto px-8 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-[14px] bg-[var(--color-primary)] text-[#0b1120] hover:bg-[var(--color-primary-hover)]">
                         تلاش کریں
                     </button>
                 </div>

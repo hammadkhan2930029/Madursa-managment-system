@@ -1,9 +1,25 @@
 import React, { useState } from 'react';
 import { Save, Copy, Plus, Trash2, User, Phone, Wallet, Landmark, FileText, Printer, X, CheckCircle } from 'lucide-react';
+/* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
 import { BankSearchField, DateField, InputField } from '../../../../Components/HR/FormElements';
 import { pakistanBanks } from '../../../../Constant/AllBanks';
 import {AppImages} from '../../../../Constant/AppImages'
+
+const createFundEntry = () => ({
+    id: crypto.randomUUID(),
+    paymentMode: 'Cash',
+    type: '',
+    subCategory: '',
+    amount: '',
+    purpose: '',
+    receiptNo: '',
+    bankName: '',
+    branchCode: '',
+    chequeNo: '',
+    chequeDate: new Date().toISOString().split('T')[0]
+});
+
 export const FundCollection = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [donorInfo, setDonorInfo] = useState({ name: '', careOf: '', number: '' });
@@ -13,24 +29,10 @@ export const FundCollection = () => {
         "نفلی (Nafila)": ["عام صدقہ", "تعمیرات", "عطیہ", "افطار پارٹی", "تعلیمی فنڈ"]
     };
 
-    const initialFundState = {
-        id: Date.now(),
-        paymentMode: 'Cash',
-        type: '',
-        subCategory: '',
-        amount: '',
-        purpose: '',
-        receiptNo: '',
-        bankName: '',
-        branchCode: '',
-        chequeNo: '',
-        chequeDate: new Date().toISOString().split('T')[0]
-    };
+    const [funds, setFunds] = useState(() => [createFundEntry()]);
 
-    const [funds, setFunds] = useState([{ ...initialFundState }]);
-
-    const handleAddFund = () => setFunds([...funds, { ...initialFundState, id: Date.now() }]);
-    const handleCopyFund = (index) => setFunds([...funds, { ...funds[index], id: Date.now() }]);
+    const handleAddFund = () => setFunds([...funds, createFundEntry()]);
+    const handleCopyFund = (index) => setFunds([...funds, { ...funds[index], id: crypto.randomUUID() }]);
     const removeFund = (id) => { if (funds.length > 1) setFunds(funds.filter(f => f.id !== id)); };
 
     const updateFund = (index, field, value) => {

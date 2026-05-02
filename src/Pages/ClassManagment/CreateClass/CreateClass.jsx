@@ -11,7 +11,7 @@ export const CreateClasses = () => {
         monthlyFee: ''
     });
 
-    const [classes, setClasses] = useState([
+    const [classes] = useState([
         { id: 1, name: 'حفظ اول', detail: 'تصیلی الفاظ', admissionFee: '1000', monthlyFee: '500' },
     ]);
 

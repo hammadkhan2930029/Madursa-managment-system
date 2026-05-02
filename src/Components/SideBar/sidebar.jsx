@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     LayoutDashboard, Users, GraduationCap, UserCheck,
     BookOpen, Wallet, Settings, LogOut, Search,
@@ -9,7 +9,6 @@ import {
 import { Avatar } from '@mui/material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { ThemeToggle } from '../ThemToggle/ThemToggle'
-import { SelectField } from '../HR/FormElements';
 
 
 export const SideBar = () => {
@@ -21,28 +20,14 @@ export const SideBar = () => {
     const [openSubMenu, setOpenSubMenu] = useState(null);
     const [openSubSubMenu, setOpenSubSubMenu] = useState(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [isDark, setIsDark] = useState(false);
+    const [isDark] = useState(() => localStorage.getItem('theme') === 'dark');
     //--------------------------------------------------------------------
 
     useEffect(() => {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            setIsDark(true);
-        }
-    }, []);
-
-    const toggleTheme = () => {
         if (isDark) {
-            document.documentElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            setIsDark(false);
-        } else {
             document.documentElement.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            setIsDark(true);
         }
-    };
+    }, [isDark]);
 
     const isActive = (path) => path && location.pathname === path;
     //--------------------------------------------------------------------
@@ -76,12 +61,49 @@ export const SideBar = () => {
             ]
         },
         {
+
             id: 'hifz',
             label: 'شعبہ حفظ',
             icon: HeartHandshake,
+            path:'/hifz',
             subMenu: [
-                { id: 'hifz_daily', label: 'روزانہ رپورٹ', path: '/hifz/daily-report' },
-                { id: 'hifz_exams', label: 'امتحانات', path: '/hifz/exams' }
+
+                {
+                    id: 'hifz_daily',
+                    label: 'یومیہ جائزہ',
+                    path: '/hifz/daily',
+                    subSubMenu: [
+                        { id: 'daily_entry', label: 'یومیہ جائزے کا اندراج', path: '/hifz/daily/entry' },
+                        { id: 'daily_list', label: 'یومیہ جائزے کی فہرست', path: '/hifz/daily/list' }
+                    ]
+                },
+
+                {
+                    id: 'hifz_weekly',
+                    label: 'ہفتہ وار جائزہ',
+                    subSubMenu: [
+                        { id: 'weekly_entry', label: 'ہفتہ وار جائزے کا اندراج', path: '/hifz/weekly/entry' },
+                        { id: 'weekly_list', label: 'ہفتہ وار جائزے کی فہرست', path: '/hifz/weekly/list' }
+                    ]
+                },
+
+                {
+                    id: 'hifz_monthly',
+                    label: 'ماہانہ جائزہ',
+                    subSubMenu: [
+                        { id: 'monthly_entry', label: 'ماہانہ جائزے کا اندراج', path: '/hifz/monthly/entry' },
+                        { id: 'monthly_list', label: 'ماہانہ جائزے کی فہرست', path: '/hifz/monthly/list' }
+                    ]
+                },
+
+                {
+                    id: 'hifz_para',
+                    label: 'پارہ جائزہ',
+                    subSubMenu: [
+                        { id: 'para_entry', label: 'پارہ جائزے کا اندراج', path: '/hifz/para/entry' },
+                        { id: 'para_list', label: 'پارہ جائزے کی فہرست', path: '/hifz/para/list' }
+                    ]
+                },
             ]
         },
         {
@@ -89,7 +111,7 @@ export const SideBar = () => {
             label: 'طلباء',
             icon: GraduationCap,
             subMenu: [
-
+                { id: 'std_parents', label: 'والدین', path: '/students/parents' },
                 { id: 'std_admission', label: 'داخلہ فارم', path: '/students/admission' },
                 { id: 'std_list', label: 'طلباء کی فہرست', path: '/students/list' },
                 { id: 'std_id_card', label: 'آئی ڈی کارڈ بنائیں', path: '/students/create-id-card' },
@@ -156,7 +178,7 @@ export const SideBar = () => {
                             path: '/finance/income/fund-collection',
                             heads: ['Monthly Fee', 'Admission Fee', 'Exam Fee', 'Transport Fee', 'Late Fee Fine']
                         },
-                          {
+                        {
                             id: 'fund-list',
                             label: 'عطیات کی فہرست',
                             path: '/finance/income/fund-list',
@@ -375,7 +397,7 @@ export const SideBar = () => {
                                             >
                                                 <div className="flex items-center gap-2">
                                                     <div className={`w-1.5 h-1.5 rounded-full ${isActive(sub.path) ? 'bg-[#00d094] scale-125' : 'bg-gray-600'}`} />
-                                                     {sub.icon && <sub.icon size={20} className={isActive(sub.path) ? 'text-white' : 'text-[#00d094]/70'} />}
+                                                    {sub.icon && <sub.icon size={20} className={isActive(sub.path) ? 'text-white' : 'text-[#00d094]/70'} />}
                                                     {sub.label}
                                                 </div>
                                                 {sub.subSubMenu && <ChevronDown size={12} className={`transition-transform duration-200 ${openSubSubMenu === sub.id ? 'rotate-180' : ''}`} />}
@@ -383,7 +405,7 @@ export const SideBar = () => {
 
                                             {/* --- Level 3: Sub-Sub Menu (Finance Heads) --- */}
                                             {sub.subSubMenu && openSubSubMenu === sub.id && (
-                                                <div className="mt-1 mr-4 space-y-1 bg-[#00d094]/5 border-r-3 border-[#00d094] pr-3 animate-in fade-in zoom-in-95 duration-200">
+                                                <div className="mt-1 mr-8 space-y-1 bg-[#00d094]/5 border-r-3 border-[#00d094] pr-3 animate-in fade-in zoom-in-95 duration-200">
                                                     {sub.subSubMenu.map((subSub) => (
                                                         <div
                                                             key={subSub.id}
@@ -409,7 +431,7 @@ export const SideBar = () => {
                 {/* //--------------------------------------------------------------// */}
 
 
-               
+
                 {/* --------------------------------------setting---------------------------------------------------- */}
                 <div className={`fixed top-1/2 -translate-y-1/2 z-[70] transition-all duration-500 ${isSidebarOpen ? 'right-64' : 'right-0 md:right-64'}`}>
                     <div className="relative group">

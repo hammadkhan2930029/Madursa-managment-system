@@ -1,20 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Search, Edit3, Trash2, UserPlus,
-    GraduationCap, School, Users, Hash, Phone
+    Search, Edit3, Trash2, UserPlus, Eye,
+    GraduationCap, School, Users, Phone
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+    getStudentProfiles,
+    initializeStudentProfiles,
+    subscribeToStudentProfiles,
+} from '../../../Constant/StudentProfiles';
+
+const mapStudentsForList = (profiles) =>
+    profiles.map((student) => ({
+        idNo: student.admission.idNo,
+        name: student.personal.fullName,
+        fatherName: student.personal.fatherName,
+        campus: student.classInfo.campus,
+        class: student.classInfo.className,
+        section: student.classInfo.section,
+        familyNo: student.classInfo.familyNo,
+    }));
 
 export const StudentList = () => {
-    useEffect(() => {
-        window.scrollTo(0, 0)
-    }, [])
-    const [students, setStudents] = useState([
-        { idNo: "STU-001", name: "محمد احمد", fatherName: "عبدالرحمن", campus: "مین کیمپس", class: "ہشتم", section: "A", familyNo: "F-501" },
-        { idNo: "STU-002", name: "علی خان", fatherName: "عمران خان", campus: "گلشن کیمپس", class: "ہفتم", section: "B", familyNo: "F-702" },
-        { idNo: "STU-003", name: "حمزہ یوسف", fatherName: "یوسف علی", campus: "مین کیمپس", class: "دہم", section: "C", familyNo: "F-305" },
-    ]);
-
+    const navigate = useNavigate();
+    const [students, setStudents] = useState(() => mapStudentsForList(getStudentProfiles()));
     const [searchTerm, setSearchTerm] = useState("");
+
+    useEffect(() => {
+        initializeStudentProfiles();
+        window.scrollTo(0, 0);
+        const unsubscribe = subscribeToStudentProfiles((profiles) => {
+            setStudents(mapStudentsForList(profiles));
+        });
+        return unsubscribe;
+    }, []);
 
     const filteredStudents = students.filter(student =>
         student.name.includes(searchTerm) ||
@@ -24,14 +43,12 @@ export const StudentList = () => {
 
     const handleDelete = (id) => {
         if (window.confirm("کیا آپ واقعی یہ ریکارڈ ختم کرنا چاہتے ہیں؟")) {
-            setStudents(students.filter(s => s.idNo !== id));
+            setStudents(students.filter((student) => student.idNo !== id));
         }
     };
 
     return (
         <div className="max-w-6xl mx-auto p-2 md:p-0 space-y-8 animate-in fade-in duration-700 pb-10" dir="rtl">
-
-            {/* --- HEADER & SEARCH --- */}
             <div className="flex flex-col gap-6 bg-[var(--color-surface)] p-6 md:p-10 rounded-[3rem] shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] border border-[var(--color-border)]">
                 <div className="flex justify-between items-center">
                     <div>
@@ -43,7 +60,10 @@ export const StudentList = () => {
                         </h2>
                         <p className="text-[var(--color-text-muted)] text-xs font-bold mt-2 mr-14">کل رجسٹرڈ طلباء: {filteredStudents.length}</p>
                     </div>
-                    <button className="bg-[var(--color-primary)] text-white p-4 rounded-[1.5rem] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[var(--color-primary)]/20 group">
+                    <button
+                        onClick={() => navigate('/students/admission')}
+                        className="bg-[var(--color-primary)] text-white p-4 rounded-[1.5rem] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[var(--color-primary)]/20 group"
+                    >
                         <UserPlus size={24} className="group-hover:rotate-12 transition-transform" />
                     </button>
                 </div>
@@ -53,16 +73,19 @@ export const StudentList = () => {
                     <input
                         type="text"
                         placeholder="نام، آئی ڈی یا فیملی نمبر سے تلاش کریں..."
-                        className="w-full pr-14 pl-6 py-4 bg-[var(--color-input)] border shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] border-[var(--color-border)] focus:border-[var(--color-primary)]/50 rounded-2xl outline-none font-bold text-sm transition-all text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] "
+                        className="w-full pr-14 pl-6 py-4 bg-[var(--color-input)] border shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] border-[var(--color-border)] focus:border-[var(--color-primary)]/50 rounded-2xl outline-none font-bold text-sm transition-all text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            {/* --- MOBILE VIEW (Cards) --- */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
                 {filteredStudents.map((student) => (
-                    <div key={student.idNo} className="bg-[var(--color-surface)] p-6 rounded-[2.5rem] border border-[var(--color-border)] shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] space-y-5">
+                    <div
+                        key={student.idNo}
+                        onClick={() => navigate(`/students/profile/${student.idNo}`)}
+                        className="bg-[var(--color-surface)] p-6 rounded-[2.5rem] border border-[var(--color-border)] shadow-[2px_6px_26px_2px_rgba(0,_0,_0,_0.1)] space-y-5 cursor-pointer hover:border-[var(--color-primary)]/40 transition-all"
+                    >
                         <div className="flex justify-between items-start">
                             <div className="flex gap-4">
                                 <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-2xl flex items-center justify-center text-[var(--color-primary)] font-black text-xs border border-[var(--color-primary)]/20">
@@ -93,15 +116,38 @@ export const StudentList = () => {
                                 <span className="text-xs font-black text-[var(--color-text-muted)]">{student.familyNo}</span>
                             </div>
                             <div className="flex gap-2">
-                                <button className="p-3 bg-blue-500/10 text-blue-400 rounded-2xl hover:bg-blue-500 hover:text-white transition-all"><Edit3 size={18} /></button>
-                                <button onClick={() => handleDelete(student.idNo)} className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl hover:bg-rose-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        navigate(`/students/profile/${student.idNo}`);
+                                    }}
+                                    className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"
+                                >
+                                    <Eye size={18} />
+                                </button>
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                    }}
+                                    className="p-3 bg-blue-500/10 text-blue-400 rounded-2xl hover:bg-blue-500 hover:text-white transition-all"
+                                >
+                                    <Edit3 size={18} />
+                                </button>
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleDelete(student.idNo);
+                                    }}
+                                    className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl hover:bg-rose-500 hover:text-white transition-all"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* --- DESKTOP VIEW (Table) --- */}
             <div className="hidden md:block bg-[var(--color-surface)] rounded-[3rem] border border-[var(--color-border)] shadow-2xl overflow-hidden">
                 <table className="w-full text-right">
                     <thead className="bg-[var(--color-input)]/50 border-b border-white/5">
@@ -114,7 +160,11 @@ export const StudentList = () => {
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {filteredStudents.map((student) => (
-                            <tr key={student.idNo} className="hover:bg-white/[0.02] transition-colors group">
+                            <tr
+                                key={student.idNo}
+                                onClick={() => navigate(`/students/profile/${student.idNo}`)}
+                                className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                            >
                                 <td className="p-6">
                                     <span className="bg-[var(--color-input)] text-[var(--color-text)]/70 px-4 py-2 rounded-2xl font-black text-[12px] border border-[var(--color-border)]">
                                         {student.idNo}
@@ -132,10 +182,30 @@ export const StudentList = () => {
                                 </td>
                                 <td className="p-6 text-center">
                                     <div className="flex items-center justify-center gap-3">
-                                        <button className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl hover:bg-blue-500 hover:text-white transition-all shadow-lg shadow-blue-500/5">
+                                        <button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                navigate(`/students/profile/${student.idNo}`);
+                                            }}
+                                            className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/5"
+                                        >
+                                            <Eye size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                            }}
+                                            className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl hover:bg-blue-500 hover:text-white transition-all shadow-lg shadow-blue-500/5"
+                                        >
                                             <Edit3 size={16} />
                                         </button>
-                                        <button onClick={() => handleDelete(student.idNo)} className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-lg shadow-rose-500/5">
+                                        <button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                handleDelete(student.idNo);
+                                            }}
+                                            className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-lg shadow-rose-500/5"
+                                        >
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -146,7 +216,6 @@ export const StudentList = () => {
                 </table>
             </div>
 
-            {/* --- EMPTY STATE --- */}
             {filteredStudents.length === 0 && (
                 <div className="p-24 text-center bg-[var(--color-surface)] rounded-[3rem] border border-[var(--color-border)]">
                     <div className="w-24 h-24 bg-[var(--color-input)] rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-[var(--color-text-muted)] opacity-20">

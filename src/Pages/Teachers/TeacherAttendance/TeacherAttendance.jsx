@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { Users, CheckCircle, XCircle, Clock, Phone, Building2, Save, Search, Calendar, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ThemedDatePicker } from '../../../Components/DatePicker/ThemedDatePicker';
 
 export const TeacherAttendance = () => {
     const navigate = useNavigate()
@@ -45,14 +46,11 @@ export const TeacherAttendance = () => {
                 <div className="p-6 border-b border-[var(--color-border)]/10 flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-4 w-full lg:w-auto">
                         <h2 className="text-xl font-bold text-[var(--text-color)]">روزانہ حاضری شیٹ</h2>
-                        {/* Date Input Field */}
-                        <div className="flex items-center gap-2 bg-[var(--color-bg)] px-4 py-2 rounded-xl border border-[var(--color-border)]/10 shadow-sm">
-                            <Calendar size={18} className="text-[var(--color-primary)]" />
-                            <input
-                                type="date"
+                        <div className="w-full lg:w-[260px]">
+                            <ThemedDatePicker
                                 value={selectedDate}
                                 onChange={(e) => setSelectedDate(e.target.value)}
-                                className="bg-transparent outline-none text-sm font-bold text-[var(--text-color)] cursor-pointer"
+                                placeholder="تاریخ منتخب کریں"
                             />
                         </div>
                     </div>
@@ -148,14 +146,14 @@ export const TeacherAttendance = () => {
 };
 
 
-const SummaryCard = ({ title, count, icon: Icon, color, textColor }) => (
+const SummaryCard = ({ title, count, icon, color, textColor }) => (
     <div className={`bg-[var(--color-surface)] p-6 rounded-3xl border-r-5 ${color} shadow-lg flex items-center justify-between`}>
         <div>
             <p className="text-sm font-bold opacity-60">{title}</p>
             <h3 className={`text-3xl font-black ${textColor}`}>{count}</h3>
         </div>
         <div className={`p-4 rounded-2xl bg-slate-100 ${textColor}`}>
-            <Icon size={28} />
+            {React.createElement(icon, { size: 28 })}
         </div>
     </div>
 );

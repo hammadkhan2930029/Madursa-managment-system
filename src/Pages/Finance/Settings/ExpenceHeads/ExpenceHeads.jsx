@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, ArrowRight, Receipt, AlertCircle, Edit2, Check, X } from 'lucide-react';
 
+const createExpenseHead = () => ({ id: crypto.randomUUID(), title: '', category: 'General', budgetLimit: '' });
+
 export const ExpenseHeadsSetup = () => {
     // Nayi entries ke liye state
-    const [expenseHeads, setExpenseHeads] = useState([
-        { id: Date.now(), title: '', category: 'General', budgetLimit: '' }
-    ]);
+    const [expenseHeads, setExpenseHeads] = useState(() => [createExpenseHead()]);
 
     // Mojooda data (List ke liye) - Real app mein ye API se ayega
     const [existingExpenses, setExistingExpenses] = useState([
@@ -13,11 +13,9 @@ export const ExpenseHeadsSetup = () => {
         { id: 2, title: 'Staff Tea', category: 'General', budgetLimit: '2000' }
     ]);
 
-    const [editingId, setEditingId] = useState(null);
-
     // --- Create Actions ---
     const addRow = () => {
-        setExpenseHeads([...expenseHeads, { id: Date.now(), title: '', category: 'General', budgetLimit: '' }]);
+        setExpenseHeads([...expenseHeads, createExpenseHead()]);
     };
 
     const deleteNewRow = (id) => {
@@ -33,7 +31,7 @@ export const ExpenseHeadsSetup = () => {
     const handleSaveNew = () => {
         console.log("Saving Expenses:", expenseHeads);
         alert("اخراجات کی نئی اقسام محفوظ کر لی گئی ہیں!");
-        setExpenseHeads([{ id: Date.now(), title: '', category: 'General', budgetLimit: '' }]);
+        setExpenseHeads([createExpenseHead()]);
     };
 
     // --- Delete Action ---

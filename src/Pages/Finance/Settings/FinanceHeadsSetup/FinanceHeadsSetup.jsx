@@ -155,30 +155,35 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, Wallet, Receipt, AlertCircle, Edit2, ArrowLeftRight } from 'lucide-react';
 
+const createIncomeHead = () => ({ id: crypto.randomUUID(), title: '', description: '' });
+const createExpenseHead = () => ({ id: crypto.randomUUID(), title: '', category: 'General', budgetLimit: '' });
+
+const existingIncome = [
+    { id: 1, title: 'Admission Fee', description: 'Naye dakhlo ki fees' },
+    { id: 2, title: 'Monthly Tuition', description: 'Mahnana fees' }
+];
+
+const existingExpenses = [
+    { id: 1, title: 'Bijli ka Bill', category: 'Operational', budgetLimit: '15000' },
+    { id: 2, title: 'Staff Tea', category: 'General', budgetLimit: '2000' }
+];
+
 export const FinanceHeadsSetup = () => {
     // Tab State: 'income' ya 'expense'
     const [activeTab, setActiveTab] = useState('income');
 
     // --- STATES FOR INCOME ---
-    const [incomeHeads, setIncomeHeads] = useState([{ id: Date.now(), title: '', description: '' }]);
-    const [existingIncome, setExistingIncome] = useState([
-        { id: 1, title: 'Admission Fee', description: 'Naye dakhlo ki fees' },
-        { id: 2, title: 'Monthly Tuition', description: 'Mahnana fees' }
-    ]);
+    const [incomeHeads, setIncomeHeads] = useState(() => [createIncomeHead()]);
 
     // --- STATES FOR EXPENSE ---
-    const [expenseHeads, setExpenseHeads] = useState([{ id: Date.now(), title: '', category: 'General', budgetLimit: '' }]);
-    const [existingExpenses, setExistingExpenses] = useState([
-        { id: 1, title: 'Bijli ka Bill', category: 'Operational', budgetLimit: '15000' },
-        { id: 2, title: 'Staff Tea', category: 'General', budgetLimit: '2000' }
-    ]);
+    const [expenseHeads, setExpenseHeads] = useState(() => [createExpenseHead()]);
 
     // --- COMMON ACTIONS ---
     const addRow = () => {
         if (activeTab === 'income') {
-            setIncomeHeads([...incomeHeads, { id: Date.now(), title: '', description: '' }]);
+            setIncomeHeads([...incomeHeads, createIncomeHead()]);
         } else {
-            setExpenseHeads([...expenseHeads, { id: Date.now(), title: '', category: 'General', budgetLimit: '' }]);
+            setExpenseHeads([...expenseHeads, createExpenseHead()]);
         }
     };
 
@@ -204,8 +209,8 @@ export const FinanceHeadsSetup = () => {
         alert(`${activeTab === 'income' ? 'آمدنی' : 'اخراجات'} کی اقسام محفوظ کر لی گئی ہیں!`);
         // Reset form
         activeTab === 'income' 
-            ? setIncomeHeads([{ id: Date.now(), title: '', description: '' }])
-            : setExpenseHeads([{ id: Date.now(), title: '', category: 'General', budgetLimit: '' }]);
+            ? setIncomeHeads([createIncomeHead()])
+            : setExpenseHeads([createExpenseHead()]);
     };
 
     return (

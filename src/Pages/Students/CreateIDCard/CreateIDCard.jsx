@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CreditCard, Layout, Smartphone, User, Printer, GraduationCap } from 'lucide-react';
+/* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppImages } from '../../../Constant/AppImages';
 import { InputField } from '../../../Components/HR/FormElements';

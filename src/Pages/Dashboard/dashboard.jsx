@@ -3,6 +3,7 @@ import {
     UserPlus, Users, Calendar, Wallet, UserCheck,
     TrendingUp, BookOpen
 } from 'lucide-react';
+/* eslint-disable-next-line no-unused-vars */
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -18,7 +19,7 @@ const StatCard =
             title,
             value,
             subValue,
-            icon: Icon,
+            icon: Icon, // eslint-disable-line no-unused-vars
             colorClass,
             borderClass,
             isIncome

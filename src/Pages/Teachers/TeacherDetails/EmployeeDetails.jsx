@@ -2,10 +2,47 @@
 
 import React, { useState } from 'react';
 import {
-    User, Briefcase, GraduationCap, Wallet,
+    User, Briefcase, Wallet,
     ChevronDown, ChevronUp, CreditCard, Edit, Printer, ChevronLeft
 } from 'lucide-react';
 import { AppImages } from '../../../Constant/AppImages';
+
+const InfoField = ({ label, value, dir = "rtl" }) => (
+    <div className="space-y-1 print:break-inside-avoid">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-main)]/40 print:text-slate-500">{label}</p>
+        <p className={`text-[15px] font-medium text-[var(--color-text-main)]/90 print:text-slate-900 ${dir === 'ltr' ? 'text-left font-sans' : 'text-right'}`} dir={dir}>
+            {value || "---"}
+        </p>
+    </div>
+);
+
+const DetailSection = ({ id, title, icon, isOpen, onToggle, children }) => (
+    <div className="mb-4 overflow-hidden border border-[var(--color-border)] rounded-[2rem] bg-[var(--color-surface)] shadow-lg transition-all duration-300 print:shadow-none print:border-slate-200 print:rounded-none print:mb-6 print:bg-white">
+        <button
+            onClick={() => onToggle(id)}
+            className="w-full flex items-center justify-between p-6 md:p-8 hover:bg-[var(--color-bg)]/5 transition-colors print:hidden"
+        >
+            <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-2xl ${isOpen ? 'bg-[var(--color-primary)] text-[var(--color-text-main)]' : 'bg-[var(--color-bg)]/5 text-[var(--color-primary)]'}`}>
+                    {React.createElement(icon, { size: 24 })}
+                </div>
+                <h3 className="text-xl font-bold text-[var(--color-text-main)]">{title}</h3>
+            </div>
+            {isOpen ? <ChevronUp /> : <ChevronDown />}
+        </button>
+
+        <div className="hidden print:flex items-center gap-2 border-b-2 border-[var(--color-primary)] mb-4 pb-2">
+            {React.createElement(icon, { size: 20, className: 'text-[var(--color-primary)]' })}
+            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+        </div>
+
+        <div className={`${isOpen ? 'block' : 'hidden'} print:block overflow-hidden`}>
+            <div className="p-6 md:p-8 pt-0 border-t border-[var(--color-border)]/5 bg-black/10 print:bg-transparent print:p-0 print:border-none">
+                {children}
+            </div>
+        </div>
+    </div>
+);
 
 export const EmployeeDetails = () => {
     //-----------------------------------------------------------------
@@ -17,9 +54,6 @@ export const EmployeeDetails = () => {
         setOpenSection(openSection === section ? null : section);
     };
     //-----------------------------------------------------------------
-
-    // Print Function
-    const handlePrint = () => window.print();
 
     // Data Object (Variables)
     const emp = {
@@ -43,50 +77,6 @@ export const EmployeeDetails = () => {
     };
     //-----------------------------------------------------------------
 
-    const DetailSection = ({ id, title, icon: Icon, children }) => {
-        const isOpen = openSection === id;
-        return (
-            <div className={`mb-4 overflow-hidden border border-[var(--color-border)] rounded-[2rem] bg-[var(--color-surface)] shadow-lg transition-all duration-300 print:shadow-none print:border-slate-200 print:rounded-none print:mb-6 print:bg-white`}>
-                <button
-                    onClick={() => toggleSection(id)}
-                    className="w-full flex items-center justify-between p-6 md:p-8 hover:bg-[var(--color-bg)]/5 transition-colors print:hidden"
-                >
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${isOpen ? 'bg-[var(--color-primary)] text-[var(--color-text-main)]' : 'bg-[var(--color-bg)]/5 text-[var(--color-primary)]'}`}>
-                            <Icon size={24} />
-                        </div>
-                        <h3 className="text-xl font-bold text-[var(--text-color)]">{title}</h3>
-                    </div>
-                    {isOpen ? <ChevronUp /> : <ChevronDown />}
-                </button>
-
-                {/* Print Title (Only visible on paper) */}
-                <div className="hidden print:flex items-center gap-2 border-b-2 border-[var(--color-primary)] mb-4 pb-2">
-                    <Icon size={20} className="text-[var(--color-primary)]" />
-                    <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-                </div>
-
-                {/* Content: Visible if open OR if printing */}
-                <div className={`${isOpen ? 'block' : 'hidden'} print:block overflow-hidden`}>
-                    <div className="p-6 md:p-8 pt-0 border-t border-[var(--color-border)]/5 bg-black/10 print:bg-transparent print:p-0 print:border-none">
-                        {children}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-    //-----------------------------------------------------------------
-
-    const InfoField = ({ label, value, dir = "rtl" }) => (
-        <div className="space-y-1 print:break-inside-avoid">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-main)]/40 print:text-slate-500">{label}</p>
-            <p className={`text-[15px] font-medium text-[var(--color-text-main)]/90 print:text-slate-900 ${dir === 'ltr' ? 'text-left font-sans' : 'text-right'}`} dir={dir}>
-                {value || "---"}
-            </p>
-        </div>
-    );
-    //--------------------------------------------------------------
-
     return (
         <div>
 
@@ -99,7 +89,7 @@ export const EmployeeDetails = () => {
                         {showPrintPreview ? "Back to Dashboard" : "Show Print Preview"} <ChevronLeft size={22} />
 
                     </button>
-                    <text className=' print:hidden'>Press (ctrl + p)</text>
+                    <p className='print:hidden'>Press (ctrl + p)</p>
                 </div>
             )}
 
@@ -112,7 +102,7 @@ export const EmployeeDetails = () => {
                                 H
                             </div>
                             <div className="text-center md:text-right space-y-2 flex-1">
-                                <h1 className="text-3xl font-black text-[var(--text-color)] print:text-slate-900">محمد حماد خان</h1>
+                                <h1 className="text-3xl font-black text-[var(--color-text-main)] print:text-slate-900">محمد حماد خان</h1>
                                 <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-5">
                                     <span className="bg-emerald-500/10 text-[var(--color-primary)] text-[10px] font-bold px-4 py-1.5 rounded-full border border-emerald-500/20 print:border-slate-200">Active</span>
                                     <span className="bg-emerald-500/10 text-[var(--color-primary)] text-[10px] font-bold px-4 py-1.5 rounded-full border border-emerald-500/20 print:border-slate-200">ID: EMP-2024-082</span>
@@ -131,7 +121,7 @@ export const EmployeeDetails = () => {
 
                         {/* --- Data Sections --- */}
                         <div className="print:space-y-8">
-                            <DetailSection id="personal" title="ذاتی معلومات" icon={User} >
+                            <DetailSection id="personal" title="ذاتی معلومات" icon={User} isOpen={openSection === 'personal'} onToggle={toggleSection}>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 print:grid-cols-3">
                                     <InfoField label="ملازم کا نام" value="محمد حامد خان" />
                                     <InfoField label="والد / شوہر کا نام" value="عبدالرشید خان" />
@@ -145,7 +135,7 @@ export const EmployeeDetails = () => {
                                 </div>
                             </DetailSection>
 
-                            <DetailSection id="job" title="تقرری کی تفصیلات" icon={Briefcase}>
+                            <DetailSection id="job" title="تقرری کی تفصیلات" icon={Briefcase} isOpen={openSection === 'job'} onToggle={toggleSection}>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 print:grid-cols-3">
                                     <InfoField label="تاریخِ تقرری" value="01/01/2024" dir="ltr" />
                                     <InfoField label="عہدہ" value="سینئر استاد" />
@@ -156,7 +146,7 @@ export const EmployeeDetails = () => {
                                 </div>
                             </DetailSection>
 
-                            <DetailSection id="salary" title="تنخواہ اور مراعات" icon={Wallet}>
+                            <DetailSection id="salary" title="تنخواہ اور مراعات" icon={Wallet} isOpen={openSection === 'salary'} onToggle={toggleSection}>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 print:grid-cols-3">
                                     <InfoField label="بنیادی تنخواہ" value="PKR 55,000" dir="ltr" />
                                     <InfoField label="ہاؤس رینٹ" value="PKR 10,000" dir="ltr" />
@@ -167,7 +157,7 @@ export const EmployeeDetails = () => {
                                 </div>
                             </DetailSection>
 
-                            <DetailSection id="bank" title="بینک اکاؤنٹ کی تفصیلات" icon={CreditCard}>
+                            <DetailSection id="bank" title="بینک اکاؤنٹ کی تفصیلات" icon={CreditCard} isOpen={openSection === 'bank'} onToggle={toggleSection}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:grid-cols-2">
                                     <InfoField label="بینک کا نام" value="Meezan Bank" />
                                     <InfoField label="اکاؤنٹ ٹائٹل" value="Muhammad Hammad Khan" />

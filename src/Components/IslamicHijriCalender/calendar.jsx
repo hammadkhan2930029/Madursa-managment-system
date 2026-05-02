@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import moment from "moment-hijri";
+/* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 
 export const HijriDatePicker = () => {

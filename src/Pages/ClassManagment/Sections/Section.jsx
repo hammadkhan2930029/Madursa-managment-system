@@ -6,7 +6,7 @@ export const CreateSections = () => {
     const [editMode, setEditMode] = useState(null); 
     const [formData, setFormData] = useState({ darja: '' });
     
-    const [sections, setSections] = useState([
+    const [sections] = useState([
         { id: 1, darja: 'الف' },
         { id: 2, darja: 'ب' },
     ]);

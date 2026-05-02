@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Plus, History, Wallet, CheckCircle, Clock, Printer, CreditCard } from 'lucide-react';
+/* eslint-disable-next-line no-unused-vars */
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-export const StudentFeeDetail = ({ studentId, onBack }) => {
+export const StudentFeeDetail = ({ studentId }) => {
     useEffect(() => {
         window.scrollTo(0, 0)
     }, [])
     const navigate = useNavigate()
 
     // Mock Data: Student ki history
-    const [history, setHistory] = useState([
+    const [history] = useState([
         { id: 1, month: 'مارچ 2026', amount: 1500, date: '2026-03-05', status: 'paid', method: 'Cash' },
         { id: 2, month: 'فروری 2026', amount: 1500, date: '2026-02-10', status: 'partial', method: 'Online' },
         { id: 3, month: 'جنوری 2026', amount: 1500, date: '-', status: 'unpaid', method: '-' },

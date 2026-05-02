@@ -10,7 +10,7 @@ import { CreateBranch } from '../Pages/CreateBranches/CreateBranches'
 import { HRManagement } from '../Pages/HRManagement/HRManagement'
 import { SettingRoutes } from './SettingRoutes';
 import { FinanceRoutes } from './FinanceRoutes';
-
+import { HifzRoutes } from './HifzRoutes'
 
 export const AppRoutes = () => {
   return (
@@ -24,21 +24,24 @@ export const AppRoutes = () => {
         {/* Single Core Pages */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="branch-management/create-branch" element={<CreateBranch />} />
+        <Route path="branch-management/campus-1" element={<CreateBranch />} />
+        <Route path="branch-management/campus-2" element={<CreateBranch />} />
+        <Route path="branch-management/campus-3" element={<CreateBranch />} />
         <Route path="HRManagement" element={<HRManagement />} />
-       <Route path="finance/*" element={<FinanceRoutes />} />
+        <Route path="finance/*" element={<FinanceRoutes />} />
 
 
 
 
 
-        
+
 
         {DepartmentRoutes}
         {ProfileRoutes}
         {StudentRoutes}
         {SettingRoutes}
         {TeacherRoutes}
-
+        {HifzRoutes}
       </Route>
 
       {/* 404 Page */}

@@ -79,6 +79,8 @@ import { SalaryEntry } from '../Pages/Finance/Expence/Salary/salary'
 export const FinanceRoutes = () => {
     return (
         <Routes>
+            <Route index element={<Navigate to="setup" replace />} />
+
             {/* Setup Group */}
             <Route path="setup">
                 <Route path="income-expence" element={<FinanceHeadsSetup />} />

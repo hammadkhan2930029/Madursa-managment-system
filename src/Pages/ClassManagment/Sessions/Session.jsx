@@ -6,7 +6,7 @@ export const CreateSessions = () => {
     const [editMode, setEditMode] = useState(null); 
     const [formData, setFormData] = useState({ islamiYear: '', esviYear: '' });
     
-    const [sessions, setSessions] = useState([
+    const [sessions] = useState([
         { id: 1, islamiYear: '۱۴۴۵ - ۱۴۴۶ھ', esviYear: '2024 - 2025' },
     ]);
 

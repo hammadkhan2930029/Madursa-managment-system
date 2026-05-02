@@ -3,7 +3,7 @@ import { GraduationCap, Plus, Edit2, Trash2, FileCheck, Award, BookOpen } from '
 import { InputField } from '../../../Components/HR/FormElements';
 
 export const QualificationManagement = () => {
-    const [qualifications, setQualifications] = useState([
+    const [qualifications] = useState([
         { id: 1, title: 'Matriculation', category: 'Secondary', level: 'Level 10' },
         { id: 2, title: 'Intermediate', category: 'Higher Secondary', level: 'Level 12' },
         { id: 3, title: 'Bachelor of Science', category: 'Graduation', level: 'Level 16' },

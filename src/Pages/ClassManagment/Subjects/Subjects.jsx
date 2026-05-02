@@ -6,7 +6,7 @@ export const CreateSubjects = () => {
     const [editMode, setEditMode] = useState(null); 
     const [formData, setFormData] = useState({ name: '', detail: '' });
 
-    const [subjects, setSubjects] = useState([
+    const [subjects] = useState([
         { id: 1, name: 'قرآن کریم', detail: 'تجوید و قراءت' },
         { id: 2, name: 'اردو', detail: 'بنیادی قواعد' },
     ]);

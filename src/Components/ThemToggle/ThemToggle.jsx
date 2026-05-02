@@ -1,17 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 export const ThemeToggle = () => {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // Check karein ke kya pehle se koi theme save hai
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      setIsDark(true);
-    }
-  }, []);
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
 
   const toggleTheme = () => {
     if (isDark) {
@@ -26,7 +17,10 @@ export const ThemeToggle = () => {
   };
 
   return (
-    <button onClick={toggleTheme} className="p-2 rounded-full bg-themeSurface text-themePrimary">
+    <button
+      onClick={toggleTheme}
+      className="p-2 rounded-full bg-[var(--color-surface)] text-[var(--color-primary)]"
+    >
       {isDark ? <Sun size={20} /> : <Moon size={20} />}
     </button>
   );

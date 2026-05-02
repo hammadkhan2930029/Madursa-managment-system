@@ -1,7 +1,36 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import { Calendar, CheckCircle, XCircle, Clock, AlertCircle, Save, ChevronRight, Edit2, ChevronDown } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
-export const TeacherAttendanceHistory = ({ teacherId }) => {
+const buildAttendanceHistory = (year, month) => {
+    const data = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let i = daysInMonth; i >= 1; i--) {
+        const day = i < 10 ? `0${i}` : i;
+        const monthNum = month + 1 < 10 ? `0${month + 1}` : month + 1;
+        const dateStr = `${year}-${monthNum}-${day}`;
+        const dayName = new Date(year, month, i).toLocaleDateString('ur-PK', { weekday: 'long' });
+
+        let initialStatus = "Hazir";
+        if (i === 3 || i === 10) initialStatus = "Not Marked";
+        if (i === 5) initialStatus = "Leave";
+        if (i === 7) initialStatus = "Ghair Hazir";
+
+        data.push({
+            date: dateStr,
+            dayName,
+            dayNum: i,
+            status: initialStatus,
+            note: initialStatus === "Leave" ? "Zaroori kaam tha" : ""
+        });
+    }
+
+    return data;
+};
+
+export const TeacherAttendanceHistory = () => {
+    const { id: teacherId } = useParams();
 
 
     const [isEditMode, setIsEditMode] = useState(false);
@@ -9,6 +38,7 @@ export const TeacherAttendanceHistory = ({ teacherId }) => {
     // Month aur Year ki state
     const [selectedYear, setSelectedYear] = useState(2026);
     const [selectedMonth, setSelectedMonth] = useState(3);
+    const [attendanceHistory, setAttendanceHistory] = useState(() => buildAttendanceHistory(2026, 3));
 
     const monthsUrdu = [
         "جنوری", "فروری", "مارچ", "اپریل", "مئی", "جون",
@@ -17,31 +47,11 @@ export const TeacherAttendanceHistory = ({ teacherId }) => {
 
     const years = [2024, 2025, 2026];
 
-    const attendanceHistory = useMemo(() => {
-        const data = [];
-        const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-
-        for (let i = daysInMonth; i >= 1; i--) {
-            const day = i < 10 ? `0${i}` : i;
-            const monthNum = selectedMonth + 1 < 10 ? `0${selectedMonth + 1}` : selectedMonth + 1;
-            const dateStr = `${selectedYear}-${monthNum}-${day}`;
-            const dayName = new Date(selectedYear, selectedMonth, i).toLocaleDateString('ur-PK', { weekday: 'long' });
-
-            let initialStatus = "Hazir";
-            if (i === 3 || i === 10) initialStatus = "Nahi Lagi";
-            if (i === 5) initialStatus = "Rukhsat";
-            if (i === 7) initialStatus = "Ghair Hazir";
-
-            data.push({
-                date: dateStr,
-                dayName: dayName,
-                dayNum: i,
-                status: initialStatus,
-                note: initialStatus === "Rukhsat" ? "Zaroori kaam tha" : ""
-            });
-        }
-        return data;
-    }, [selectedYear, selectedMonth]);
+    const updateCalendar = (year, month) => {
+        setSelectedYear(year);
+        setSelectedMonth(month);
+        setAttendanceHistory(buildAttendanceHistory(year, month));
+    };
 
     const scrollToDate = (dayNum) => {
         const element = document.getElementById(`date-${dayNum}`);
@@ -73,7 +83,7 @@ export const TeacherAttendanceHistory = ({ teacherId }) => {
                         <div className="relative">
                             <select
                                 value={selectedMonth}
-                                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                                onChange={(e) => updateCalendar(selectedYear, parseInt(e.target.value, 10))}
                                 className="appearance-none bg-transparent pr-8 pl-4 py-2 text-[14px] font-bold text-[var(--color-text)] outline-none cursor-pointer"
                             >
                                 {monthsUrdu.map((m, index) => (
@@ -88,7 +98,7 @@ export const TeacherAttendanceHistory = ({ teacherId }) => {
                         <div className="relative">
                             <select
                                 value={selectedYear}
-                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                onChange={(e) => updateCalendar(parseInt(e.target.value, 10), selectedMonth)}
                                 className="appearance-none bg-transparent pr-8 pl-4 py-2 text-[12px] font-bold text-[var(--color-text)] outline-none cursor-pointer"
                             >
                                 {years.map(y => (
@@ -121,7 +131,7 @@ export const TeacherAttendanceHistory = ({ teacherId }) => {
                         MH
                     </div>
                     <h1 className="text-2xl font-black text-[var(--color-text)]">محمد حماد خان</h1>
-                    <span className="bg-[#00d094]/10 text-[#00d094] text-xs px-3 py-1 rounded-full font-bold mt-2 border border-[#00d094]/20">EMP-001</span>
+                    <span className="bg-[#00d094]/10 text-[#00d094] text-xs px-3 py-1 rounded-full font-bold mt-2 border border-[#00d094]/20">{teacherId ? `EMP-${teacherId}` : 'EMP-001'}</span>
                     <p className="text-sm opacity-60 mt-4 font-medium text-[var(--color-text)]">سینئر مدرس | کتب خانہ</p>
 
                     <div className="flex gap-3 w-full mt-6 border-t border-[var(--color-border)]/10 pt-6">
@@ -240,10 +250,10 @@ const StatusBadge = ({ status }) => {
     const config = {
         "Hazir": { text: "حاضر", style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
         "Ghair Hazir": { text: "غیر حاضر", style: "bg-red-500/10 text-red-400 border-red-500/20" },
-        "Rukhsat": { text: "رخصت", style: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-        "Nahi Lagi": { text: "رہ گئی", style: "bg-slate-500/10 text-slate-400 border-slate-500/20" }
+        "Leave": { text: "رخصت", style: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+        "Not Marked": { text: "رہ گئی", style: "bg-slate-500/10 text-slate-400 border-slate-500/20" }
     };
-    const current = config[status] || config["Nahi Lagi"];
+    const current = config[status] || config["Not Marked"];
     return (
         <span className={`px-3 py-1 rounded-full text-[9px] font-black border ${current.style}`}>
             {current.text}

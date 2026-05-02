@@ -1,26 +1,35 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
+import { ThemedDatePicker } from '../DatePicker/ThemedDatePicker';
 //---------------------------------------------------------------------------------------
 
-export const InputField = ({ label, placeholder, isDark, type = "text" }) => (
+export const InputField = ({ label, placeholder, isDark, type = "text", className = '', ...props }) => (
   <div className="space-y-2">
-    <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
+    {label ? (
+      <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
+    ) : null}
     <input
       type={type}
       placeholder={placeholder}
+      {...props}
       className={`w-full p-4 rounded-2xl border outline-none font-bold transition-all focus:ring-4 focus:ring-emerald-500/10 ${isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
-        }`}
+        } ${className}`}
     />
   </div>
 );
 //---------------------------------------------------------------------------------------
 
-export const SelectField = ({ label, options, isDark }) => (
+export const SelectField = ({ label, options, isDark, className = '', ...props }) => (
   <div className="space-y-2 relative">
-    <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
+    {label ? (
+      <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
+    ) : null}
     <div className="relative">
-      <select className={`w-full p-4 rounded-2xl border outline-none font-bold appearance-none transition-all ${isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
-        }`}>
+      <select
+        {...props}
+        className={`w-full p-4 rounded-2xl border outline-none font-bold appearance-none transition-all ${isDark ? 'bg-[var(--color-surface)] border-[var(--color-border)]' : 'bg-[var(--color-input)] border-transparent focus:border-[var(--color-primary)]'
+        } ${className}`}
+      >
         {options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
       </select>
       <ChevronDown size={18} className="absolute left-4 top-4 text-[var(--color-text-muted)] pointer-events-none" />
@@ -88,11 +97,18 @@ export const BankSearchField = ({ label, value, onChange, options, isDark, onSel
 
 //---------------------------------------------------------------------------------------
 
-export const DateField = ({ label }) => (
-  <div className="space-y-2">
-    <label className="text-[11px] font-black text-[var(--color-text-muted)] mr-2 uppercase tracking-widest">{label}</label>
-    <input type="date" className="w-full p-4 rounded-2xl border bg-[var(--color-input)] border-transparent outline-none font-bold focus:border-[var(--color-primary)] transition-all" />
-  </div>
+export const DateField = ({ label, value, onChange, name, placeholder, min, max, className = '', size = 'md' }) => (
+  <ThemedDatePicker
+    label={label}
+    value={value}
+    onChange={onChange}
+    name={name}
+    placeholder={placeholder}
+    min={min}
+    max={max}
+    className={className}
+    size={size}
+  />
 );
 //---------------------------------------------------------------------------------------
 

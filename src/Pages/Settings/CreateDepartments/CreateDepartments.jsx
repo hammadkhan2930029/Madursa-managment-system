@@ -3,7 +3,7 @@ import { Building2, Plus, Edit2, Trash2, Users, Target, Shield } from 'lucide-re
 import { InputField } from '../../../Components/HR/FormElements';
 
 export const DepartmentManagement = () => {
-    const [departments, setDepartments] = useState([
+    const [departments] = useState([
         { id: 1, name: 'Software Development', head: 'Hammad Khan', members: 12, code: 'DEV' },
         { id: 2, name: 'Human Resources', head: 'Sarah Ahmed', members: 4, code: 'HR' },
     ]);

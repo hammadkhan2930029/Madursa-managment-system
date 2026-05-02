@@ -72,15 +72,6 @@ export const StudentScheduleManager = () => {
     const toggleClass = (className) => {
         setExpandedClass(expandedClass === className ? null : className);
     };
-    //-------------------------------------------------
-     const [expandedClass2, setExpandedClass2] = useState(null);
-
-   
-    const toggleClass2 = (className) => {
-        setExpandedClass(expandedClass === className ? null : className);
-    };
-    //--------------------------------------------------------
-
     return (
         <div className="p-4 md:p-6 space-y-8 bg-[var(--color-bg)] min-h-screen pb-24 text-[var(--color-text)] font-urdu" dir="rtl">
 

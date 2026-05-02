@@ -10,6 +10,7 @@ export const TeacherRoutes = (
         <Route path="details/:id" element={<EmployeeDetails />} />
         <Route path="attendance" element={<TeacherAttendance />} />
         <Route path="attendance-history/:id" element={<TeacherAttendanceHistory />} />
+        <Route path="schedule " element={<TeachersScheduleManager />} />
         <Route path="schedule" element={<TeachersScheduleManager />} />
 
 
