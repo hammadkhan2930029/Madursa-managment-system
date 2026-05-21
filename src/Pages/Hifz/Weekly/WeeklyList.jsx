@@ -1,86 +1,112 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CalendarDays, Check, Pencil, Printer, Search, UserRound, X } from 'lucide-react';
-import { getWeeklyJaizaEntries, saveWeeklyJaizaEntry, subscribeToWeeklyJaizaEntries } from '../../../Constant/WeeklyHifzStore';
+import { getWeeklyHifzEntries, updateWeeklyHifzEntry } from '../../../Constant/HifzApi';
+import { formatDateForDisplay, formatDateForInput } from '../HifzUi';
 
 const reportMeta = {
     campus: 'مدرسہ الہدیٰ',
     title: 'ہفتہ وار جائزہ فہرست',
-    week: 'ہفتہ: 1 تا 7 شعبان 1447ھ',
-    className: 'کلاس: حفظ اول',
-    teacher: 'استاد: قاری محمد سلیم',
+    week: 'ہفتہ: ____________',
+    className: 'کلاس: ____________',
+    teacher: 'استاد: ____________',
     location: 'مرکزی کیمپس',
 };
-
-const defaultWeeklyRows = [
-    {
-        id: 'weekly-1',
-        studentNo: 'H-101',
-        studentName: 'محمد احمد',
-        siparaFrom: '1',
-        siparaTo: '3',
-        sawal1: '18',
-        sawal2: '17',
-        sawal3: '19',
-        tahajji: '16',
-        panja: '9',
-        khudKhwani: '8',
-        classWork: '9',
-        quality: 'جید جداً',
-    },
-    {
-        id: 'weekly-2',
-        studentNo: 'H-102',
-        studentName: 'عبداللہ خان',
-        siparaFrom: '2',
-        siparaTo: '4',
-        sawal1: '16',
-        sawal2: '15',
-        sawal3: '17',
-        tahajji: '14',
-        panja: '8',
-        khudKhwani: '7',
-        classWork: '8',
-        quality: 'جید',
-    },
-    {
-        id: 'weekly-3',
-        studentNo: 'H-103',
-        studentName: 'حسان علی',
-        siparaFrom: '3',
-        siparaTo: '5',
-        sawal1: '12',
-        sawal2: '13',
-        sawal3: '14',
-        tahajji: '11',
-        panja: '7',
-        khudKhwani: '6',
-        classWork: '7',
-        quality: 'مقبول',
-    },
-];
 
 const inlineInputClassName = 'w-full min-w-[88px] h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm font-bold text-center outline-none focus:border-[var(--color-primary)]';
 const inlineTextInputClassName = 'w-full min-w-[120px] h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm font-bold text-right outline-none focus:border-[var(--color-primary)]';
 
-const normalizeWeeklyRows = (entries) => (
-    entries.length > 0 ? entries : defaultWeeklyRows
-);
+const toInputValue = (value) => (value === null || value === undefined ? '' : String(value));
+
+const addDays = (dateValue, days) => {
+    const date = new Date(dateValue || new Date());
+    if (Number.isNaN(date.getTime())) return formatDateForInput(new Date());
+    date.setDate(date.getDate() + days);
+    return formatDateForInput(date);
+};
+
+const mapWeeklyEntryToRow = (entry) => ({
+    id: String(entry.id),
+    apiId: entry.id,
+    studentId: entry.studentId,
+    studentNo: entry.student?.admissionNumber || '',
+    studentName: entry.student?.fullName || '',
+    weekLabel: entry.weekLabel || '',
+    className: entry.className || '',
+    sectionName: entry.sectionName || '',
+    teacherName: entry.teacherName || '',
+    weekStartDate: formatDateForInput(entry.weekStartDate),
+    weekEndDate: formatDateForInput(entry.weekEndDate),
+    siparaFrom: entry.siparaFrom || entry.lessonFrom || '',
+    siparaTo: entry.siparaTo || entry.lessonTo || '',
+    sawal1: toInputValue(entry.sawal1),
+    sawal2: toInputValue(entry.sawal2),
+    sawal3: toInputValue(entry.sawal3),
+    tahajji: toInputValue(entry.tahajji),
+    panja: toInputValue(entry.panja),
+    khudKhwani: toInputValue(entry.khudKhwani),
+    classWork: entry.classWork || '',
+    quality: entry.performanceStatus || entry.remarks || '',
+});
+
+const toOptionalNumber = (value) => {
+    if (value === '' || value === undefined || value === null) return undefined;
+    return Number(value);
+};
+
+const buildUpdatePayload = (row) => {
+    const weekStartDate = row.weekStartDate || formatDateForInput(new Date());
+    const weekEndDate = row.weekEndDate || addDays(weekStartDate, 6);
+
+    return {
+        studentId: Number(row.studentId),
+        weekLabel: row.weekLabel || undefined,
+        className: row.className || undefined,
+        sectionName: row.sectionName || undefined,
+        teacherName: row.teacherName || undefined,
+        weekStartDate,
+        weekEndDate,
+        siparaFrom: row.siparaFrom || undefined,
+        siparaTo: row.siparaTo || undefined,
+        lessonFrom: row.siparaFrom || undefined,
+        lessonTo: row.siparaTo || undefined,
+        sawal1: toOptionalNumber(row.sawal1),
+        sawal2: toOptionalNumber(row.sawal2),
+        sawal3: toOptionalNumber(row.sawal3),
+        tahajji: toOptionalNumber(row.tahajji),
+        panja: toOptionalNumber(row.panja),
+        khudKhwani: toOptionalNumber(row.khudKhwani),
+        classWork: row.classWork || undefined,
+        performanceStatus: row.quality || 'جید',
+        remarks: row.quality || undefined,
+        status: 'active',
+    };
+};
 
 export const WeeklyJaizaList = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [savedRows, setSavedRows] = useState(() => getWeeklyJaizaEntries());
+    const [savedRows, setSavedRows] = useState([]);
     const [editingRowId, setEditingRowId] = useState('');
     const [draftRow, setDraftRow] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const loadWeeklyEntries = async () => {
+        try {
+            setIsLoading(true);
+            const result = await getWeeklyHifzEntries('page=1&limit=100&status=active');
+            setSavedRows((result.items || []).map(mapWeeklyEntryToRow));
+        } catch (error) {
+            alert(error?.message || 'ہفتہ وار جائزے کی فہرست لوڈ نہیں ہو سکی۔');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const unsubscribe = subscribeToWeeklyJaizaEntries((entries) => {
-            setSavedRows(entries);
-        });
-
-        return unsubscribe;
+        loadWeeklyEntries();
     }, []);
 
-    const rows = useMemo(() => normalizeWeeklyRows(savedRows), [savedRows]);
+    const rows = useMemo(() => savedRows, [savedRows]);
+    const firstRow = rows[0] || null;
 
     const filteredRows = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -90,8 +116,11 @@ export const WeeklyJaizaList = () => {
         }
 
         return rows.filter((row) =>
-            row.studentName.toLowerCase().includes(query) ||
-            row.studentNo.toLowerCase().includes(query)
+            (row.studentName || '').toLowerCase().includes(query) ||
+            (row.studentNo || '').toLowerCase().includes(query) ||
+            (row.className || '').toLowerCase().includes(query) ||
+            (row.teacherName || '').toLowerCase().includes(query) ||
+            (row.weekLabel || '').toLowerCase().includes(query)
         );
     }, [rows, searchQuery]);
 
@@ -109,13 +138,18 @@ export const WeeklyJaizaList = () => {
         setDraftRow((prev) => ({ ...prev, [field]: value }));
     };
 
-    const saveInlineRow = () => {
+    const saveInlineRow = async () => {
         if (!draftRow) {
             return;
         }
 
-        saveWeeklyJaizaEntry(draftRow);
-        cancelEditing();
+        try {
+            await updateWeeklyHifzEntry(draftRow.apiId || draftRow.id, buildUpdatePayload(draftRow));
+            cancelEditing();
+            await loadWeeklyEntries();
+        } catch (error) {
+            alert(error?.message || 'ہفتہ وار جائزہ اپڈیٹ نہیں ہو سکا۔');
+        }
     };
 
     const renderNumericCell = (row, field) => {
@@ -159,7 +193,7 @@ export const WeeklyJaizaList = () => {
                             </div>
                             <div className="space-y-1">
                                 <h1 className="text-2xl md:text-3xl font-black">{reportMeta.title}</h1>
-                                <p className="text-sm font-bold text-[var(--color-text-muted)]">{reportMeta.campus}</p>
+                                {/* <p className="text-sm font-bold text-[var(--color-text-muted)]">{reportMeta.campus}</p> */}
                             </div>
                         </div>
 
@@ -189,13 +223,13 @@ export const WeeklyJaizaList = () => {
                     <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 text-sm font-bold">
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 flex items-center gap-2">
                             <CalendarDays size={16} className="text-[var(--color-primary)]" />
-                            {reportMeta.week}
+                            {firstRow?.weekLabel || (firstRow ? `ہفتہ: ${formatDateForDisplay(firstRow.weekStartDate)} تا ${formatDateForDisplay(firstRow.weekEndDate)}` : reportMeta.week)}
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                            {reportMeta.className}
+                            {firstRow?.className ? `کلاس: ${firstRow.className}${firstRow.sectionName ? ` / ${firstRow.sectionName}` : ''}` : reportMeta.className}
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                            {reportMeta.teacher}
+                            {firstRow?.teacherName ? `استاد: ${firstRow.teacherName}` : reportMeta.teacher}
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
                             {reportMeta.location}
@@ -224,7 +258,14 @@ export const WeeklyJaizaList = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredRows.length > 0 ? (
+                                {isLoading && (
+                                    <tr>
+                                        <td colSpan="13" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
+                                            ہفتہ وار جائزے لوڈ ہو رہے ہیں...
+                                        </td>
+                                    </tr>
+                                )}
+                                {!isLoading && filteredRows.length > 0 ? (
                                     filteredRows.map((row, index) => {
                                         const isEditing = editingRowId === row.id;
 
@@ -290,10 +331,10 @@ export const WeeklyJaizaList = () => {
                                             </tr>
                                         );
                                     })
-                                ) : (
+                                ) : !isLoading && (
                                     <tr>
                                         <td colSpan="13" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
-                                            اس تلاش کے مطابق کوئی طالب علم نہیں ملا۔
+                                            اس تلاش / فہرست کے مطابق کوئی ہفتہ وار ریکارڈ نہیں ملا۔
                                         </td>
                                     </tr>
                                 )}

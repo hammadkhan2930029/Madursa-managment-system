@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookOpen, CalendarDays, Plus, Save, Trash2, UserRound } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getClasses, getSections } from '../../../Constant/AcademicSetupApi';
+import { createWeeklyHifzEntry } from '../../../Constant/HifzApi';
+import { getStudents } from '../../../Constant/StudentsApi';
+import { getTeachers } from '../../../Constant/TeachersApi';
+import { getUniqueOptions, mapStudentsForHifz } from '../HifzUi';
 
 const createWeeklyRow = () => ({
     id: crypto.randomUUID(),
+    studentId: '',
     studentName: '',
     siparaFrom: '',
     siparaTo: '',
@@ -15,6 +22,8 @@ const createWeeklyRow = () => ({
     classWork: '',
     quality: '',
 });
+
+const qualityOptions = ['ممتاز','ممتاز مع شرف', 'بہتر', 'مناسب', , 'کمزور'];
 
 const initialFormState = {
     week: '',
@@ -41,17 +50,103 @@ const rowHasContent = (row) => {
 };
 
 export const WeeklyJaizaForm = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState(initialFormState);
+    const [students, setStudents] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [teachers, setTeachers] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadOptions = async () => {
+            try {
+                const [studentResult, classResult, sectionResult, teacherResult] = await Promise.all([
+                    getStudents('page=1&limit=100&status=active'),
+                    getClasses('page=1&limit=100&status=active'),
+                    getSections('page=1&limit=100&status=active'),
+                    getTeachers('page=1&limit=100&status=active'),
+                ]);
+                if (isMounted) {
+                    setStudents(mapStudentsForHifz(studentResult.items || []));
+                    setClasses(classResult.items || []);
+                    setSections(sectionResult.items || []);
+                    setTeachers(teacherResult.items || []);
+                }
+            } catch (error) {
+                alert(error?.message || 'معلومات لوڈ نہیں ہو سکیں۔');
+            }
+        };
+
+        loadOptions();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const studentOptions = useMemo(
+        () => students.map((student) => ({
+            ...student,
+            label: `${student.fullName} - ${student.admissionNumber}`,
+        })),
+        [students],
+    );
+
+    const classOptions = useMemo(
+        () => (classes.length
+            ? [...new Set(classes.map((item) => item.name).filter(Boolean))]
+            : getUniqueOptions(students, 'className')),
+        [classes, students],
+    );
+
+    const sectionOptions = useMemo(
+        () => {
+            const setupSections = sections
+                .filter((section) => !formData.className || section.class?.name === formData.className)
+                .map((section) => section.name)
+                .filter(Boolean);
+
+            if (setupSections.length) return [...new Set(setupSections)];
+
+            return getUniqueOptions(
+                students.filter((student) => !formData.className || student.className === formData.className),
+                'sectionName',
+            );
+        },
+        [sections, students, formData.className],
+    );
+
+    const teacherOptions = useMemo(
+        () => [...new Set(teachers
+            .map((teacher) => teacher.fullName || teacher.name)
+            .filter(Boolean))],
+        [teachers],
+    );
 
     const handleFormChange = (field, value) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+            ...(field === 'className' ? { section: '' } : {}),
+        }));
     };
 
     const handleRowChange = (rowId, field, value) => {
         setFormData((prev) => ({
             ...prev,
             rows: prev.rows.map((row) => (
-                row.id === rowId ? { ...row, [field]: value } : row
+                row.id === rowId
+                    ? {
+                        ...row,
+                        [field]: value,
+                        ...(field === 'studentName'
+                            ? { studentId: studentOptions.find((student) => student.label === value)?.id || '' }
+                            : {}),
+                    }
+                    : row
             )),
         }));
     };
@@ -81,7 +176,56 @@ export const WeeklyJaizaForm = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const toOptionalNumber = (value) => {
+        if (value === '' || value === undefined || value === null) return undefined;
+        return Number(value);
+    };
+
+    const getWeekDates = () => {
+        const parsedDate = new Date(formData.week);
+        const start = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(0, 0, 0, 0);
+
+        return {
+            weekStartDate: start.toISOString().slice(0, 10),
+            weekEndDate: end.toISOString().slice(0, 10),
+        };
+    };
+
+    const buildPayload = (row) => {
+        const student = studentOptions.find((item) => item.id === row.studentId || item.label === row.studentName);
+        const { weekStartDate, weekEndDate } = getWeekDates();
+
+        return {
+            studentId: Number(student?.id || row.studentId),
+            weekLabel: formData.week,
+            className: formData.className || undefined,
+            sectionName: formData.section || undefined,
+            teacherName: formData.teacher || undefined,
+            weekStartDate,
+            weekEndDate,
+            siparaFrom: row.siparaFrom || undefined,
+            siparaTo: row.siparaTo || undefined,
+            lessonFrom: row.siparaFrom || undefined,
+            lessonTo: row.siparaTo || undefined,
+            sawal1: toOptionalNumber(row.sawal1),
+            sawal2: toOptionalNumber(row.sawal2),
+            sawal3: toOptionalNumber(row.sawal3),
+            tahajji: toOptionalNumber(row.tahajji),
+            panja: toOptionalNumber(row.panja),
+            khudKhwani: toOptionalNumber(row.khudKhwani),
+            classWork: row.classWork || undefined,
+            performanceStatus: row.quality || 'جید',
+            remarks: row.quality || undefined,
+            status: 'active',
+        };
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.week || !formData.className || !formData.section) {
@@ -94,8 +238,28 @@ export const WeeklyJaizaForm = () => {
             return;
         }
 
-        console.log('Weekly Jaiza saved:', formData);
-        alert('ہفتہ وار جائزہ فارم کامیابی سے محفوظ ہو گیا۔');
+        const rowsToSave = formData.rows.filter(rowHasContent);
+        const rowWithoutStudent = rowsToSave.find((row) => {
+            const student = studentOptions.find((item) => item.id === row.studentId || item.label === row.studentName);
+            return !student;
+        });
+
+        if (rowWithoutStudent) {
+            alert('براہ کرم ہر سطر میں فہرست سے درست طالب علم منتخب کریں۔');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            await Promise.all(rowsToSave.map((row) => createWeeklyHifzEntry(buildPayload(row))));
+            alert('ہفتہ وار جائزہ ڈیٹابیس میں محفوظ ہو گیا۔');
+            setFormData(initialFormState);
+        } catch (error) {
+            alert(error?.message || 'ہفتہ وار جائزہ محفوظ نہیں ہو سکا۔');
+        } finally {
+            setIsSaving(false);
+        }
+
     };
 
     return (
@@ -121,6 +285,7 @@ export const WeeklyJaizaForm = () => {
 
                         <button
                             type="button"
+                            onClick={() => navigate('/hifz/weekly/list')}
                             className="px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-input)] transition-all"
                         >
                             <ArrowRight size={18} />
@@ -137,8 +302,9 @@ export const WeeklyJaizaForm = () => {
                                     type="text"
                                     value={formData.week}
                                     onChange={(e) => handleFormChange('week', e.target.value)}
-                                    placeholder="مثلاً 1 تا 7 شعبان"
-                                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 pr-12 pl-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
+                                    placeholder="1 تا 7 شعبان"
+                                    dir="rtl"
+                                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 pr-14 pl-5 text-right text-sm font-bold outline-none focus:border-[var(--color-primary)]"
                                 />
                             </div>
                         </div>
@@ -147,33 +313,51 @@ export const WeeklyJaizaForm = () => {
                             <label className="text-xs font-black text-[var(--color-text-muted)]">کلاس</label>
                             <input
                                 type="text"
+                                list="weekly-class-options"
                                 value={formData.className}
                                 onChange={(e) => handleFormChange('className', e.target.value)}
                                 placeholder="مثلاً حفظ اول"
                                 className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
                             />
+                            <datalist id="weekly-class-options">
+                                {classOptions.map((className) => (
+                                    <option key={className} value={className} />
+                                ))}
+                            </datalist>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">سیکشن</label>
                             <input
                                 type="text"
+                                list="weekly-section-options"
                                 value={formData.section}
                                 onChange={(e) => handleFormChange('section', e.target.value)}
                                 placeholder="A / B"
                                 className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
                             />
+                            <datalist id="weekly-section-options">
+                                {sectionOptions.map((sectionName) => (
+                                    <option key={sectionName} value={sectionName} />
+                                ))}
+                            </datalist>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">استاد</label>
                             <input
                                 type="text"
+                                list="weekly-teacher-options"
                                 value={formData.teacher}
                                 onChange={(e) => handleFormChange('teacher', e.target.value)}
                                 placeholder="استاد کا نام"
                                 className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
                             />
+                            <datalist id="weekly-teacher-options">
+                                {teacherOptions.map((teacherName) => (
+                                    <option key={teacherName} value={teacherName} />
+                                ))}
+                            </datalist>
                         </div>
                     </div>
                 </div>
@@ -200,10 +384,10 @@ export const WeeklyJaizaForm = () => {
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">سوال 1 نمبر<br />کل نمبر 20</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">سوال 2 نمبر<br />کل نمبر 20</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">سوال 3 نمبر<br />کل نمبر 20</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">تہجی<br />کل نمبر 20</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">پنجہ<br />کل نمبر 10</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">خود خوانی<br />کل نمبر 10</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">کلاس میں<br />کردہ نمبر</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">تجوید<br />کل نمبر 20</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">لہجہ<br />کل نمبر 10</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">خود اعتمادی<br />کل نمبر 10</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">کل حاسل<br />کردہ نمبر</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[160px]">کیفیت</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[80px]">حذف</th>
                                 </tr>
@@ -216,11 +400,17 @@ export const WeeklyJaizaForm = () => {
                                                 <UserRound className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-primary)]" size={16} />
                                                 <input
                                                     type="text"
+                                                    list="weekly-student-options"
                                                     value={row.studentName}
                                                     onChange={(e) => handleRowChange(row.id, 'studentName', e.target.value)}
                                                     placeholder="طالب علم / ولدیت"
                                                     className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 pr-9 pl-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
                                                 />
+                                                <datalist id="weekly-student-options">
+                                                    {studentOptions.map((student) => (
+                                                        <option key={student.id} value={student.label} />
+                                                    ))}
+                                                </datalist>
                                             </div>
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
@@ -263,7 +453,16 @@ export const WeeklyJaizaForm = () => {
                                             <input type="text" value={row.classWork} onChange={(e) => handleRowChange(row.id, 'classWork', e.target.value)} placeholder="کلاس ورک" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
-                                            <input type="text" value={row.quality} onChange={(e) => handleRowChange(row.id, 'quality', e.target.value)} placeholder="مثلاً جید" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
+                                            <select
+                                                value={row.quality}
+                                                onChange={(e) => handleRowChange(row.id, 'quality', e.target.value)}
+                                                className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
+                                            >
+                                                <option value="">کیفیت منتخب کریں</option>
+                                                {qualityOptions.map((option) => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
                                             <button
@@ -283,7 +482,7 @@ export const WeeklyJaizaForm = () => {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <button type="submit" className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all">
+                    <button type="submit" disabled={isSaving} className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:cursor-not-allowed disabled:opacity-60">
                         <Save size={20} />
                         ہفتہ وار جائزہ محفوظ کریں
                     </button>

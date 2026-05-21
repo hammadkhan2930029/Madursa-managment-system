@@ -1,6 +1,7 @@
 import { API_BASE_URL, apiRequest } from './Api';
 
 const AUTH_KEY = 'madarsa_admin_auth';
+export const MADRASSA_PROFILE_UPDATED_EVENT = 'madarsa:madrassa-profile-updated';
 
 export const defaultAdminCredentials = {
   username: 'admin',
@@ -24,6 +25,15 @@ const readSession = () => {
 const writeSession = (session) => {
   if (!canUseStorage) return;
   window.localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+};
+
+const notifyMadrassaProfileUpdated = (profile) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent(MADRASSA_PROFILE_UPDATED_EVENT, {
+      detail: profile,
+    }),
+  );
 };
 
 export const getAdminCredentials = () => defaultAdminCredentials;
@@ -103,6 +113,7 @@ export const fetchMadrassaProfile = async () => {
       ...currentSession,
       madrassaProfile: profile,
     });
+    notifyMadrassaProfileUpdated(profile);
   }
 
   return profile;
@@ -207,6 +218,7 @@ export const updateMadrassaProfile = async (profileData) => {
       ...currentSession,
       madrassaProfile: profile,
     });
+    notifyMadrassaProfileUpdated(profile);
   }
 
   return profile;

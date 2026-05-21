@@ -86,6 +86,9 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
     --print-border: #d1d5db;
     --print-light-bg: rgba(0, 208, 148, 0.08);
     --print-light-bg-strong: rgba(0, 208, 148, 0.16);
+    --receipt-urdu-font: "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", "Noto Naskh Arabic", "Urdu Typesetting", "Segoe UI", serif;
+    --receipt-ui-font: "Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+    --receipt-number-font: "Inter", "Segoe UI", Arial, sans-serif;
   }
 
   @page {
@@ -108,10 +111,9 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
 
  body {
   color: var(--print-dark);
-
-  font-family:
-    "Noto Nastaliq Urdu",
-    serif;
+  font-family: var(--receipt-urdu-font);
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern";
 
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -186,16 +188,12 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
   margin: 0;
 
   color: var(--print-dark);
-
-  font-family:
-    "Marhey",
-    cursive;
+  font-family: var(--receipt-urdu-font);
 
   font-size: 24pt;
-  line-height: 1.1;
-  font-weight: 700;
-
-  letter-spacing: 0.5px;
+  line-height: 1.45;
+  font-weight: 900;
+  letter-spacing: 0;
 
   text-shadow:
     0 1px 0 rgba(255,255,255,0.6),
@@ -206,15 +204,11 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
   margin: 1mm 0 0;
 
   color: #6b7280;
-
-  font-family:
-    "Noto Sans Arabic",
-    sans-serif;
+  font-family: var(--receipt-ui-font);
 
   font-size: 8pt;
   font-weight: 700;
-
-  letter-spacing: 0.3px;
+  letter-spacing: 0;
 }
 
   .title {
@@ -235,22 +229,18 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
 
   .title strong {
     color: var(--print-dark);
-    font-family: Arial, sans-serif;
+    font-family: var(--receipt-number-font);
     font-size: 8.5pt;
   }
 
  h2 {
   margin: 0;
-
-  font-family:
-    "Marhey",
-    cursive;
+  font-family: var(--receipt-urdu-font);
 
   font-size: 22pt;
-  line-height: 1.1;
-  font-weight: 700;
-
-  letter-spacing: 0.5px;
+  line-height: 1.35;
+  font-weight: 900;
+  letter-spacing: 0;
 
   background: var(--print-gradient);
   -webkit-background-clip: text;
@@ -323,7 +313,7 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
     width: 36%;
     direction: ltr;
     text-align: center;
-    font-family: Arial, sans-serif;
+    font-family: var(--receipt-number-font);
     font-weight: 900;
   }
 
@@ -409,14 +399,6 @@ const buildFeeReceiptHtml = ({ voucher, madrassaProfile }) => {
       </footer>
     </section>
   </main>
-  <script>
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        window.print();
-        setTimeout(function () { window.close(); }, 300);
-      }, 350);
-    });
-  </script>
 </body>
 </html>`;
 };
@@ -604,14 +586,25 @@ export const FeesCollection = () => {
         frameDoc.document.write(printContents);
         frameDoc.document.close();
 
+        const cleanupPrintFrame = () => {
+            if (iframe.parentNode) {
+                document.body.removeChild(iframe);
+            }
+        };
+
         iframe.onload = () => {
             setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
+                const printWindow = iframe.contentWindow;
+                if (!printWindow) {
+                    cleanupPrintFrame();
+                    return;
+                }
 
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                }, 1000);
+                printWindow.onafterprint = cleanupPrintFrame;
+                printWindow.focus();
+                printWindow.print();
+
+                setTimeout(cleanupPrintFrame, 1500);
             }, 500);
         };
     };

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Check, ChevronDown, Pencil, Printer, Search, X } from 'lucide-react';
-import { getDailyJaizaEntries, saveDailyJaizaEntry, subscribeToDailyJaizaEntries } from '../../../Constant/DailyHifzStore';
-import { getStudentProfiles } from '../../../Constant/StudentProfiles';
+import { getDailyHifzEntries, updateDailyHifzEntry } from '../../../Constant/HifzApi';
+import { getStudents } from '../../../Constant/StudentsApi';
+import { formatDateForInput, mapStudentsForHifz } from '../HifzUi';
 
 const registerMeta = {
     campus: 'مدرسہ الہدیٰ',
@@ -85,11 +86,66 @@ const defaultRows = [...filledRows, ...emptyRows];
 const inlineInputClassName = 'w-full min-w-[72px] h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-xs font-bold text-center outline-none focus:border-[var(--color-primary)]';
 const inlineTextInputClassName = 'w-full min-w-[110px] h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-bold text-right outline-none focus:border-[var(--color-primary)]';
 
-const normalizeRows = (entries) => (entries.length > 0 ? entries : defaultRows);
+const normalizeRows = (entries) => entries;
+const getDayName = (date) => (date ? new Date(date).toLocaleDateString('ur-PK', { weekday: 'long' }) : '');
+const toInputValue = (value) => (value === null || value === undefined ? '' : String(value));
+
+const mapDailyEntryToRow = (entry, selectedMonth, selectedYear) => ({
+    id: String(entry.id),
+    apiId: entry.id,
+    studentId: entry.studentId,
+    studentName: entry.student?.fullName || '',
+    admissionNumber: entry.student?.admissionNumber || '',
+    month: selectedMonth,
+    year: selectedYear,
+    date: formatDateForInput(entry.date),
+    day: getDayName(entry.date),
+    sabak: entry.sabq || '',
+    sabakMistake: toInputValue(entry.sabqMistake),
+    sabakAtkann: toInputValue(entry.sabqAtkann),
+    sabqiMistake: toInputValue(entry.sabaqiMistake),
+    sabqiAtkann: toInputValue(entry.sabaqiAtkann),
+    manzilBeforeMistake: toInputValue(entry.manzilBeforeMistake),
+    manzilBeforeAtkann: toInputValue(entry.manzilBeforeAtkann),
+    manzilBeforeDetail: entry.manzilBeforeDetail || '',
+    manzilAfterMistake: toInputValue(entry.manzilAfterMistake),
+    manzilAfterAtkann: toInputValue(entry.manzilAfterAtkann),
+    manzilAfterDetail: entry.manzilAfterDetail || '',
+    lessonDetail: entry.lessonDetail || entry.remarks || '',
+    count: toInputValue(entry.count),
+    quality: entry.performanceStatus || '',
+});
+
+const toOptionalNumber = (value) => {
+    if (value === '' || value === undefined || value === null) return undefined;
+    return Number(value);
+};
+
+const buildUpdatePayload = (row) => ({
+    studentId: Number(row.studentId),
+    date: row.date,
+    sabq: row.sabak || undefined,
+    sabqMistake: toOptionalNumber(row.sabakMistake),
+    sabqAtkann: toOptionalNumber(row.sabakAtkann),
+    sabaqiMistake: toOptionalNumber(row.sabqiMistake),
+    sabaqiAtkann: toOptionalNumber(row.sabqiAtkann),
+    manzil: [row.manzilBeforeDetail, row.manzilAfterDetail].filter(Boolean).join(' / ') || undefined,
+    manzilBeforeDetail: row.manzilBeforeDetail || undefined,
+    manzilBeforeMistake: toOptionalNumber(row.manzilBeforeMistake),
+    manzilBeforeAtkann: toOptionalNumber(row.manzilBeforeAtkann),
+    manzilAfterDetail: row.manzilAfterDetail || undefined,
+    manzilAfterMistake: toOptionalNumber(row.manzilAfterMistake),
+    manzilAfterAtkann: toOptionalNumber(row.manzilAfterAtkann),
+    lessonDetail: row.lessonDetail || undefined,
+    count: toOptionalNumber(row.count),
+    performanceStatus: row.quality || 'جید',
+    remarks: row.lessonDetail || undefined,
+    status: 'active',
+});
 
 export const DailyJaizaList = () => {
-    const students = useMemo(() => getStudentProfiles(), []);
-    const [savedRows, setSavedRows] = useState(() => getDailyJaizaEntries());
+    const [students, setStudents] = useState([]);
+    const [savedRows, setSavedRows] = useState([]);
     const [editingRowId, setEditingRowId] = useState('');
     const [draftRow, setDraftRow] = useState(null);
     const [studentSearch, setStudentSearch] = useState('');
@@ -97,14 +153,59 @@ export const DailyJaizaList = () => {
     const [selectedMonth, setSelectedMonth] = useState('شعبان');
     const [selectedYear, setSelectedYear] = useState('1447ھ');
     const [showStudentResults, setShowStudentResults] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const loadDailyEntries = async (studentId = selectedStudentId) => {
+        try {
+            setIsLoading(true);
+            const params = new URLSearchParams({
+                page: '1',
+                limit: '100',
+                status: 'active',
+            });
+
+            if (studentId) {
+                params.set('studentId', String(studentId));
+            }
+
+            const result = await getDailyHifzEntries(params.toString());
+            setSavedRows((result.items || []).map((entry) => mapDailyEntryToRow(entry, selectedMonth, selectedYear)));
+        } catch (error) {
+            alert(error?.message || 'یومیہ جائزے کی فہرست لوڈ نہیں ہو سکی۔');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const unsubscribe = subscribeToDailyJaizaEntries((entries) => {
-            setSavedRows(entries);
-        });
+        let isMounted = true;
 
-        return unsubscribe;
+        const loadSetup = async () => {
+            try {
+                const [studentsResult, dailyResult] = await Promise.all([
+                    getStudents('page=1&limit=100&status=active'),
+                    getDailyHifzEntries('page=1&limit=100&status=active'),
+                ]);
+
+                if (isMounted) {
+                    setStudents(mapStudentsForHifz(studentsResult.items || []));
+                    setSavedRows((dailyResult.items || []).map((entry) => mapDailyEntryToRow(entry, selectedMonth, selectedYear)));
+                }
+            } catch (error) {
+                alert(error?.message || 'یومیہ جائزے کا ڈیٹا لوڈ نہیں ہو سکا۔');
+            }
+        };
+
+        loadSetup();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
+
+    useEffect(() => {
+        loadDailyEntries(selectedStudentId);
+    }, [selectedStudentId]);
 
     const registerRows = useMemo(() => normalizeRows(savedRows), [savedRows]);
 
@@ -116,27 +217,24 @@ export const DailyJaizaList = () => {
         }
 
         return students.filter((student) => {
-            const fullName = student.personal?.fullName?.toLowerCase() || '';
-            const fatherName = student.personal?.fatherName?.toLowerCase() || '';
-            const idNo = student.admission?.idNo?.toLowerCase() || '';
+            const fullName = student.fullName?.toLowerCase() || '';
+            const fatherName = student.fatherName?.toLowerCase() || '';
+            const idNo = student.admissionNumber?.toLowerCase() || '';
 
             return fullName.includes(query) || fatherName.includes(query) || idNo.includes(query);
         }).slice(0, 8);
     }, [studentSearch, students]);
 
     const selectedStudent = useMemo(() => (
-        students.find((student) => student.id === selectedStudentId || student.admission?.idNo === selectedStudentId) || null
+        students.find((student) => String(student.id) === String(selectedStudentId) || student.admissionNumber === selectedStudentId) || null
     ), [selectedStudentId, students]);
 
     const visibleRows = useMemo(() => {
         return registerRows.filter((row) => {
-            const matchesStudent = selectedStudentId ? row.studentId === selectedStudentId : true;
-            const matchesMonth = selectedMonth ? row.month === selectedMonth : true;
-            const matchesYear = selectedYear ? row.year === selectedYear : true;
-
-            return matchesStudent && matchesMonth && matchesYear;
+            const matchesStudent = selectedStudentId ? String(row.studentId) === String(selectedStudentId) : true;
+            return matchesStudent;
         });
-    }, [registerRows, selectedStudentId, selectedMonth, selectedYear]);
+    }, [registerRows, selectedStudentId]);
 
     const startEditing = (row) => {
         setEditingRowId(row.id);
@@ -152,18 +250,24 @@ export const DailyJaizaList = () => {
         setDraftRow((prev) => ({ ...prev, [field]: value }));
     };
 
-    const saveInlineRow = () => {
+    const saveInlineRow = async () => {
         if (!draftRow) {
             return;
         }
 
-        saveDailyJaizaEntry({
-            ...draftRow,
-            studentId: selectedStudentId || draftRow.studentId,
-            month: selectedMonth,
-            year: selectedYear,
-        });
-        cancelEditing();
+        try {
+            const nextRow = {
+                ...draftRow,
+                studentId: selectedStudentId || draftRow.studentId,
+                month: selectedMonth,
+                year: selectedYear,
+            };
+            await updateDailyHifzEntry(nextRow.apiId || nextRow.id, buildUpdatePayload(nextRow));
+            cancelEditing();
+            await loadDailyEntries();
+        } catch (error) {
+            alert(error?.message || 'یومیہ جائزہ اپڈیٹ نہیں ہو سکا۔');
+        }
     };
 
     const renderCell = (row, field, isText = false) => {
@@ -183,7 +287,7 @@ export const DailyJaizaList = () => {
 
     const handleStudentSelect = (student) => {
         setSelectedStudentId(student.id);
-        setStudentSearch(`${student.personal?.fullName} - ${student.admission?.idNo}`);
+        setStudentSearch(`${student.fullName} - ${student.admissionNumber}`);
         setShowStudentResults(false);
     };
 
@@ -238,9 +342,9 @@ export const DailyJaizaList = () => {
                                             onClick={() => handleStudentSelect(student)}
                                             className="w-full px-4 py-3 text-right hover:bg-[var(--color-bg)] transition-all"
                                         >
-                                            <div className="font-black text-sm">{student.personal?.fullName}</div>
+                                            <div className="font-black text-sm">{student.fullName}</div>
                                             <div className="text-xs text-[var(--color-text-muted)] font-bold">
-                                                {student.personal?.fatherName} | {student.admission?.idNo}
+                                                {student.fatherName} | {student.admissionNumber}
                                             </div>
                                         </button>
                                     ))}
@@ -275,22 +379,23 @@ export const DailyJaizaList = () => {
                         </div>
 
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                            استاد: {selectedStudent?.education?.teacherName || '____________'}
+                            استاد: ____________
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                            کلاس / شعبہ: {selectedStudent ? `${selectedStudent.classInfo?.className} (${selectedStudent.classInfo?.section})` : '____________'}
+                            کلاس / شعبہ: {selectedStudent ? `${selectedStudent.className} (${selectedStudent.sectionName})` : '____________'}
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                            طالب علم نمبر: {selectedStudent?.admission?.idNo || '____________'}
+                            طالب علم نمبر: {selectedStudent?.admissionNumber || '____________'}
                         </div>
                     </div>
                 </div>
 
                 <div className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:p-5 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1650px] border-collapse text-center text-sm">
+                        <table className="w-full min-w-[1750px] border-collapse text-center text-sm">
                             <thead>
                                 <tr className="bg-[var(--color-bg)]">
+                                    <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[150px]">طالب علم</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">تاریخ</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">دن</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">سبق</th>
@@ -314,11 +419,22 @@ export const DailyJaizaList = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {visibleRows.map((row, index) => {
+                                {isLoading && (
+                                    <tr>
+                                        <td colSpan="16" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
+                                            یومیہ جائزے لوڈ ہو رہے ہیں...
+                                        </td>
+                                    </tr>
+                                )}
+                                {!isLoading && visibleRows.map((row, index) => {
                                     const isEditing = editingRowId === row.id;
 
                                     return (
                                         <tr key={row.id} className={index % 2 === 0 ? 'bg-transparent' : 'bg-[var(--color-bg)]/40'}>
+                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[150px] text-right">
+                                                <div className="font-black">{row.studentName || '---'}</div>
+                                                <div className="text-[11px] font-bold text-[var(--color-text-muted)]">{row.admissionNumber || ''}</div>
+                                            </td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[95px]">{renderCell(row, 'date')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[80px]">{renderCell(row, 'day')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[100px]">{renderCell(row, 'sabak')}</td>
@@ -367,9 +483,9 @@ export const DailyJaizaList = () => {
                                         </tr>
                                     );
                                 })}
-                                {visibleRows.length === 0 && (
+                                {!isLoading && visibleRows.length === 0 && (
                                     <tr>
-                                        <td colSpan="15" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
+                                        <td colSpan="16" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
                                             اس طالب علم / مہینہ / سال کے مطابق کوئی یومیہ ریکارڈ نہیں ملا۔
                                         </td>
                                     </tr>

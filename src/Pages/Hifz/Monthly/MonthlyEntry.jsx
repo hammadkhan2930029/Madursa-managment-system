@@ -322,12 +322,12 @@ export const MonthlyJaizaEntry = () => {
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">آغاز سبق</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">اختتام سبق</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">کل خواندگی</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">سبق نامہ</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">سبقی نامہ</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">منزل نامہ</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">سبق ناغہ</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">سبقی ناغہ</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">منزل ناغہ</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[110px]">غیر حاضری</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">رخصت / بیماری</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">انتقال / فراغت</th>
+                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">امتحانی نمبرات</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[220px]">وجوہات</th>
                                 </tr>
                             </thead>

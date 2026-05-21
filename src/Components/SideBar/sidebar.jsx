@@ -9,7 +9,7 @@ import {
 import { Avatar } from '@mui/material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { ThemeToggle } from '../ThemToggle/ThemToggle'
-import { fetchCurrentAdminProfile, fetchMadrassaProfile, getAdminSession, resolveApiAssetUrl, logoutAdmin } from '../../Constant/AdminAuth'
+import { fetchCurrentAdminProfile, fetchMadrassaProfile, getAdminSession, resolveApiAssetUrl, logoutAdmin, MADRASSA_PROFILE_UPDATED_EVENT } from '../../Constant/AdminAuth'
 
 
 export const SideBar = () => {
@@ -38,6 +38,35 @@ export const SideBar = () => {
             URL.revokeObjectURL(avatarSrc);
         }
     }, [avatarSrc]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const applyMadrassaProfile = async (profile) => {
+            if (!isMounted || !profile) return;
+
+            setMadrassaProfile(profile);
+            if (profile.logoUrl) {
+                const resolvedLogoUrl = await resolveApiAssetUrl(profile.logoUrl);
+                if (isMounted) {
+                    setAvatarSrc(resolvedLogoUrl || '');
+                }
+            } else {
+                setAvatarSrc('');
+            }
+        };
+
+        const handleMadrassaProfileUpdated = (event) => {
+            applyMadrassaProfile(event.detail || getAdminSession()?.madrassaProfile || null);
+        };
+
+        window.addEventListener(MADRASSA_PROFILE_UPDATED_EVENT, handleMadrassaProfileUpdated);
+
+        return () => {
+            isMounted = false;
+            window.removeEventListener(MADRASSA_PROFILE_UPDATED_EVENT, handleMadrassaProfileUpdated);
+        };
+    }, []);
 
     useEffect(() => {
         let isMounted = true;

@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, User, School, BookOpen, Save, ArrowRight, ClipboardCheck, Plus, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ThemedDatePicker } from '../../../Components/DatePicker/ThemedDatePicker';
+import { getStudents } from '../../../Constant/StudentsApi';
+import { createDailyHifzEntry } from '../../../Constant/HifzApi';
+import { getClasses, getSections } from '../../../Constant/AcademicSetupApi';
+import { filterStudentsForHifz, getUniqueOptions, mapStudentsForHifz } from '../HifzUi';
 
-const qualityOptions = ['ممتاز', 'جید جداً', 'جید', 'مقبول', 'راسب'];
+const qualityOptions = ['ممتاز', 'بہتر', 'جید', 'مقبول', 'مناسب'];
 
 const createEntry = () => ({
     id: crypto.randomUUID(),
@@ -44,10 +49,80 @@ const hasEntryContent = (entry) => {
 };
 
 export const DailyJaizaEntry = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState(initialFormData);
+    const [students, setStudents] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadStudents = async () => {
+            try {
+                setIsLoadingStudents(true);
+                const [studentResult, classResult, sectionResult] = await Promise.all([
+                    getStudents('page=1&limit=100&status=active'),
+                    getClasses('page=1&limit=100&status=active'),
+                    getSections('page=1&limit=100&status=active'),
+                ]);
+                if (isMounted) {
+                    setStudents(mapStudentsForHifz(studentResult.items || []));
+                    setClasses(classResult.items || []);
+                    setSections(sectionResult.items || []);
+                }
+            } catch (error) {
+                alert(error?.message || 'طلبہ لوڈ نہیں ہو سکے۔');
+            } finally {
+                if (isMounted) {
+                    setIsLoadingStudents(false);
+                }
+            }
+        };
+
+        loadStudents();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const classOptions = useMemo(
+        () => (classes.length ? classes.map((item) => item.name).filter(Boolean) : getUniqueOptions(students, 'className')),
+        [classes, students],
+    );
+    const sectionOptions = useMemo(
+        () => {
+            const setupSections = sections
+                .filter((section) => !formData.class || section.class?.name === formData.class)
+                .map((section) => section.name)
+                .filter(Boolean);
+
+            return setupSections.length
+                ? [...new Set(setupSections)]
+                : getUniqueOptions(filterStudentsForHifz(students, formData.class, ''), 'sectionName');
+        },
+        [formData.class, sections, students],
+    );
+    const studentOptions = useMemo(
+        () => filterStudentsForHifz(students, formData.class, formData.section),
+        [formData.class, formData.section, students],
+    );
 
     const handleChange = (field, value) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        setFormData((prev) => {
+            const next = { ...prev, [field]: value };
+            if (field === 'class') {
+                next.section = '';
+                next.student = '';
+            }
+            if (field === 'section') {
+                next.student = '';
+            }
+            return next;
+        });
     };
 
     const handleEntryChange = (entryId, section, field, value) => {
@@ -95,7 +170,34 @@ export const DailyJaizaEntry = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const toOptionalNumber = (value) => {
+        if (value === '' || value === undefined || value === null) return undefined;
+        return Number(value);
+    };
+
+    const buildPayload = (entry) => ({
+        studentId: Number(formData.student),
+        date: entry.date,
+        sabq: entry.sabaq.para || undefined,
+        sabqListener: entry.sabaq.ayat || undefined,
+        sabqMistake: toOptionalNumber(entry.sabaq.mistake),
+        sabqAtkann: toOptionalNumber(entry.sabaq.atkann),
+        sabaqiMistake: toOptionalNumber(entry.sabqi.mistake),
+        sabaqiAtkann: toOptionalNumber(entry.sabqi.atkann),
+        manzil: [entry.manzil_1.detail, entry.manzil_2.detail].filter(Boolean).join(' / ') || undefined,
+        manzilBeforeDetail: entry.manzil_1.detail || undefined,
+        manzilBeforeMistake: toOptionalNumber(entry.manzil_1.mistake),
+        manzilBeforeAtkann: toOptionalNumber(entry.manzil_1.atkann),
+        manzilAfterDetail: entry.manzil_2.detail || undefined,
+        manzilAfterMistake: toOptionalNumber(entry.manzil_2.mistake),
+        manzilAfterAtkann: toOptionalNumber(entry.manzil_2.atkann),
+        lessonDetail: entry.remarks || undefined,
+        performanceStatus: entry.quality || 'جید',
+        remarks: entry.remarks || undefined,
+        status: 'active',
+    });
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.class || !formData.section || !formData.student) {
@@ -108,8 +210,28 @@ export const DailyJaizaEntry = () => {
             return;
         }
 
-        console.log('Daily Jaiza saved:', formData);
-        alert('یومیہ جائزہ ریکارڈ کامیابی سے محفوظ ہو گیا۔');
+        const entriesToSave = formData.entries.filter(hasEntryContent);
+        const duplicateDate = entriesToSave.find((entry, index) => (
+            entriesToSave.findIndex((item) => item.date === entry.date) !== index
+        ));
+
+        if (duplicateDate) {
+            alert('ایک طالب علم کے لیے ایک تاریخ پر صرف ایک یومیہ جائزہ محفوظ ہو سکتا ہے۔ ہر انٹری کی تاریخ الگ رکھیں۔');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            await Promise.all(entriesToSave.map((entry) => createDailyHifzEntry(buildPayload(entry))));
+            alert('یومیہ جائزہ ڈیٹابیس میں محفوظ ہو گیا۔');
+            setFormData(initialFormData);
+        } catch (error) {
+            alert(error?.message || 'یومیہ جائزہ محفوظ نہیں ہو سکا۔');
+        } finally {
+            setIsSaving(false);
+        }
+
+        return;
     };
 
     return (
@@ -129,7 +251,7 @@ export const DailyJaizaEntry = () => {
                             <p className="text-sm font-bold text-[var(--color-text-muted)] mt-5">طالب علم کی روزانہ کی کارکردگی درج کریں</p>
                         </div>
                     </div>
-                    <button type="button" className="px-6 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-main)] font-bold flex items-center gap-2 hover:bg-[var(--color-input)] transition-all">
+                    <button type="button" onClick={() => navigate('/hifz/daily/list')} className="px-6 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-main)] font-bold flex items-center gap-2 hover:bg-[var(--color-input)] transition-all">
                         <ArrowRight size={18} /> واپس فہرست
                     </button>
                 </div>
@@ -147,8 +269,9 @@ export const DailyJaizaEntry = () => {
                                 onChange={(e) => handleChange('class', e.target.value)}
                             >
                                 <option value="">کلاس منتخب کریں</option>
-                                <option value="hifz-awal">حفظ اول</option>
-                                <option value="hifz-doum">حفظ دوم</option>
+                                {classOptions.map((className) => (
+                                    <option key={className} value={className}>{className}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -161,8 +284,9 @@ export const DailyJaizaEntry = () => {
                             onChange={(e) => handleChange('section', e.target.value)}
                         >
                             <option value="">سیکشن منتخب کریں</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
+                            {sectionOptions.map((sectionName) => (
+                                <option key={sectionName} value={sectionName}>{sectionName}</option>
+                            ))}
                         </select>
                     </div>
 
@@ -176,22 +300,16 @@ export const DailyJaizaEntry = () => {
                                 onChange={(e) => handleChange('student', e.target.value)}
                             >
                                 <option value="">طالب علم منتخب کریں</option>
-                                <option value="muhammad-ahmad">محمد احمد</option>
-                                <option value="abdullah-khan">عبداللہ خان</option>
+                                {studentOptions.map((student) => (
+                                    <option key={student.id} value={student.id}>
+                                        {student.fullName} - {student.admissionNumber}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex justify-end">
-                    <button
-                        type="button"
-                        onClick={handleAddEntry}
-                        className="h-[50px] min-w-[170px] px-5 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary)] hover:text-[#0b1120] transition-all"
-                    >
-                        <Plus size={18} /> نئی انٹری
-                    </button>
-                </div>
             </div>
 
             {formData.entries.map((entry, index) => (
@@ -402,9 +520,16 @@ export const DailyJaizaEntry = () => {
                 </div>
             ))}
 
-            <div className="flex justify-end pt-4">
-                <button type="submit" className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all">
-                    <Save size={20} /> ریکارڈ محفوظ کریں
+            <div className="flex flex-col-reverse md:flex-row justify-end gap-3 pt-4">
+                <button
+                    type="button"
+                    onClick={handleAddEntry}
+                    className="w-full md:w-auto min-w-[170px] px-6 py-4 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary)] hover:text-[#0b1120] transition-all"
+                >
+                    <Plus size={18} /> نئی انٹری
+                </button>
+                <button type="submit" disabled={isSaving} className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:cursor-not-allowed disabled:opacity-60">
+                    <Save size={20} /> {isSaving ? 'محفوظ ہو رہا ہے...' : 'ریکارڈ محفوظ کریں'}
                 </button>
             </div>
         </form>
