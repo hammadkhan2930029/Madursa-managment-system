@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, CalendarDays, Save, Search, UserRound } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowRight, BookOpen, CalendarDays, Save, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ThemedDatePicker } from '../../../Components/DatePicker/ThemedDatePicker';
-import { getStudentProfiles } from '../../../Constant/StudentProfiles';
-import { saveSiparaJaizaEntry } from '../../../Constant/SiparaHifzStore';
+import { createSiparaHifzEntry, getSiparaHifzEntries } from '../../../Constant/HifzApi';
+import { getStudents } from '../../../Constant/StudentsApi';
+import { mapStudentsForHifz } from '../HifzUi';
 
 const siparaRowsTemplate = [
     { paraNo: 30, paraName: 'عم' },
@@ -39,6 +41,7 @@ const siparaRowsTemplate = [
 
 const createSiparaRow = (row) => ({
     id: crypto.randomUUID(),
+    apiId: '',
     paraNo: row.paraNo,
     paraName: row.paraName,
     startDate: '',
@@ -53,10 +56,78 @@ const createInitialFormData = () => ({
     rows: siparaRowsTemplate.map(createSiparaRow),
 });
 
+const formatDateForInput = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+};
+
+const toOptionalNumber = (value) => {
+    if (value === '' || value === undefined || value === null) return undefined;
+    return Number(value);
+};
+
+const rowHasContent = (row) => (
+    [row.startDate, row.completionDate, row.totalDays, row.remarks].some((value) => String(value).trim() !== '')
+);
+
+const readOnlyCellClassName = 'w-full min-h-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 px-4 py-3 text-sm leading-7 font-bold text-right text-[var(--color-text-main)]';
+const inputCellClassName = 'w-full h-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-sm leading-7 font-bold text-right outline-none focus:border-[var(--color-primary)]';
+
+const renderReadOnlyValue = (value) => (
+    <div className={readOnlyCellClassName}>
+        {value || '____________'}
+    </div>
+);
+
+const mergeRowsWithSavedEntries = (entries = []) => (
+    siparaRowsTemplate.map((template) => {
+        const savedEntry = entries.find((entry) => Number(entry.siparaNumber) === template.paraNo);
+
+        if (!savedEntry) {
+            return createSiparaRow(template);
+        }
+
+        return {
+            ...createSiparaRow(template),
+            apiId: savedEntry.id,
+            startDate: formatDateForInput(savedEntry.startDate),
+            completionDate: formatDateForInput(savedEntry.endDate),
+            totalDays: savedEntry.totalDays === null || savedEntry.totalDays === undefined ? '' : String(savedEntry.totalDays),
+            remarks: savedEntry.quality || savedEntry.performanceStatus || savedEntry.remarks || '',
+        };
+    })
+);
+
 export const ParaJaizaEntry = () => {
-    const students = useMemo(() => getStudentProfiles(), []);
+    const navigate = useNavigate();
+    const [students, setStudents] = useState([]);
     const [formData, setFormData] = useState(createInitialFormData);
     const [showResults, setShowResults] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoadingSavedRows, setIsLoadingSavedRows] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadStudents = async () => {
+            try {
+                const result = await getStudents('page=1&limit=100&status=active');
+                if (isMounted) {
+                    setStudents(mapStudentsForHifz(result.items || []));
+                }
+            } catch (error) {
+                alert(error?.message || 'طلبہ لوڈ نہیں ہو سکے۔');
+            }
+        };
+
+        loadStudents();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const filteredStudents = useMemo(() => {
         const query = formData.studentSearch.trim().toLowerCase();
@@ -66,16 +137,44 @@ export const ParaJaizaEntry = () => {
         }
 
         return students.filter((student) => {
-            const name = student.personal?.fullName?.toLowerCase() || '';
-            const father = student.personal?.fatherName?.toLowerCase() || '';
-            const idNo = student.admission?.idNo?.toLowerCase() || '';
-            return name.includes(query) || father.includes(query) || idNo.includes(query);
+            const name = student.fullName?.toLowerCase() || '';
+            const father = student.fatherName?.toLowerCase() || '';
+            const admissionNumber = student.admissionNumber?.toLowerCase() || '';
+            return name.includes(query) || father.includes(query) || admissionNumber.includes(query);
         }).slice(0, 8);
     }, [formData.studentSearch, students]);
 
     const selectedStudent = useMemo(() => (
-        students.find((student) => student.id === formData.studentId || student.admission?.idNo === formData.studentId) || null
+        students.find((student) => String(student.id) === String(formData.studentId)) || null
     ), [formData.studentId, students]);
+
+    const loadSavedSiparaRows = useCallback(async (studentId) => {
+        if (!studentId) return;
+
+        try {
+            setIsLoadingSavedRows(true);
+            const params = new URLSearchParams({
+                page: '1',
+                limit: '100',
+                status: 'active',
+                studentId: String(studentId),
+            });
+            const result = await getSiparaHifzEntries(params.toString());
+            setFormData((prev) => ({
+                ...prev,
+                rows: mergeRowsWithSavedEntries(result.items || []),
+            }));
+        } catch (error) {
+            alert(error?.message || 'محفوظ شدہ سپارہ ریکارڈ لوڈ نہیں ہو سکا۔');
+        } finally {
+            setIsLoadingSavedRows(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!formData.studentId) return;
+        loadSavedSiparaRows(formData.studentId);
+    }, [formData.studentId, loadSavedSiparaRows]);
 
     const handleRowChange = (rowId, field, value) => {
         setFormData((prev) => ({
@@ -90,12 +189,24 @@ export const ParaJaizaEntry = () => {
         setFormData((prev) => ({
             ...prev,
             studentId: student.id,
-            studentSearch: `${student.personal?.fullName} - ${student.admission?.idNo}`,
+            studentSearch: `${student.fullName} - ${student.admissionNumber}`,
         }));
         setShowResults(false);
     };
 
-    const handleSubmit = (e) => {
+    const buildPayload = (row) => ({
+        studentId: Number(formData.studentId),
+        siparaNumber: Number(row.paraNo),
+        startDate: row.startDate || undefined,
+        endDate: row.completionDate || undefined,
+        totalDays: toOptionalNumber(row.totalDays),
+        quality: row.remarks || undefined,
+        performanceStatus: row.remarks || 'جید',
+        remarks: row.remarks || undefined,
+        status: 'active',
+    });
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!selectedStudent) {
@@ -103,29 +214,23 @@ export const ParaJaizaEntry = () => {
             return;
         }
 
-        const hasData = formData.rows.some((row) =>
-            [row.startDate, row.completionDate, row.totalDays, row.remarks].some((value) => String(value).trim() !== '')
-        );
+        const rowsToSave = formData.rows.filter((row) => !row.apiId && rowHasContent(row));
 
-        if (!hasData) {
+        if (!rowsToSave.length) {
             alert('براہ کرم کم از کم ایک سپارہ کی تفصیل درج کریں۔');
             return;
         }
 
-        const payload = {
-            studentId: selectedStudent.id,
-            studentName: selectedStudent.personal?.fullName || '',
-            fatherName: selectedStudent.personal?.fatherName || '',
-            className: selectedStudent.classInfo?.className || '',
-            section: selectedStudent.classInfo?.section || '',
-            teacher: selectedStudent.education?.teacherName || '',
-            admissionDate: selectedStudent.admission?.admissionDate || '',
-            rows: formData.rows,
-        };
-
-        saveSiparaJaizaEntry(payload);
-        console.log('Sipara Jaiza saved:', payload);
-        alert('سپارہ جائزہ کامیابی سے محفوظ ہو گیا۔');
+        try {
+            setIsSaving(true);
+            await Promise.all(rowsToSave.map((row) => createSiparaHifzEntry(buildPayload(row))));
+            alert('سپارہ جائزہ ڈیٹابیس میں محفوظ ہو گیا۔');
+            await loadSavedSiparaRows(formData.studentId);
+        } catch (error) {
+            alert(error?.message || 'سپارہ جائزہ محفوظ نہیں ہو سکا۔');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -147,6 +252,7 @@ export const ParaJaizaEntry = () => {
 
                         <button
                             type="button"
+                            onClick={() => navigate('/hifz/sipara/list')}
                             className="px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-input)] transition-all"
                         >
                             <ArrowRight size={18} />
@@ -161,7 +267,7 @@ export const ParaJaizaEntry = () => {
                                 type="text"
                                 value={formData.studentSearch}
                                 onChange={(e) => {
-                                    setFormData((prev) => ({ ...prev, studentSearch: e.target.value, studentId: '' }));
+                                    setFormData((prev) => ({ ...prev, studentSearch: e.target.value, studentId: '', rows: siparaRowsTemplate.map(createSiparaRow) }));
                                     setShowResults(true);
                                 }}
                                 onFocus={() => setShowResults(true)}
@@ -177,9 +283,9 @@ export const ParaJaizaEntry = () => {
                                             onClick={() => handleStudentSelect(student)}
                                             className="w-full px-4 py-3 text-right hover:bg-[var(--color-bg)] transition-all"
                                         >
-                                            <div className="font-black text-sm">{student.personal?.fullName}</div>
+                                            <div className="font-black text-sm">{student.fullName}</div>
                                             <div className="text-xs text-[var(--color-text-muted)] font-bold">
-                                                {student.personal?.fatherName} | {student.admission?.idNo}
+                                                {student.fatherName} | {student.admissionNumber}
                                             </div>
                                         </button>
                                     ))}
@@ -189,33 +295,38 @@ export const ParaJaizaEntry = () => {
 
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 h-14 flex items-center justify-between text-sm font-bold">
                             <span>ولدیت:</span>
-                            <span>{selectedStudent?.personal?.fatherName || '____________'}</span>
+                            <span>{selectedStudent?.fatherName || '____________'}</span>
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 h-14 flex items-center justify-between text-sm font-bold">
                             <span>استاد:</span>
-                            <span>{selectedStudent?.education?.teacherName || '____________'}</span>
+                            <span>{selectedStudent?.teacherName || '____________'}</span>
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 h-14 flex items-center justify-between text-sm font-bold">
                             <span>تاریخ داخلہ:</span>
-                            <span>{selectedStudent?.admission?.admissionDate || '____________'}</span>
+                            <span>{formatDateForInput(selectedStudent?.admissionDate) || '____________'}</span>
                         </div>
 
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 h-14 flex items-center justify-between text-sm font-bold">
                             <span>کلاس:</span>
-                            <span>{selectedStudent?.classInfo?.className || '____________'}</span>
+                            <span>{selectedStudent?.className || '____________'}</span>
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 h-14 flex items-center justify-between text-sm font-bold">
                             <span>سیکشن:</span>
-                            <span>{selectedStudent?.classInfo?.section || '____________'}</span>
+                            <span>{selectedStudent?.sectionName || '____________'}</span>
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 h-14 flex items-center justify-between text-sm font-bold">
-                            <span>رول نمبر:</span>
-                            <span>{selectedStudent?.classInfo?.rollNo || '____________'}</span>
+                            <span>داخلہ نمبر:</span>
+                            <span>{selectedStudent?.admissionNumber || '____________'}</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:p-5 shadow-sm overflow-hidden">
+                    {isLoadingSavedRows && (
+                        <div className="mb-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-sm font-bold text-[var(--color-text-muted)]">
+                            محفوظ شدہ سپارہ ریکارڈ لوڈ ہو رہا ہے...
+                        </div>
+                    )}
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[1500px] border-collapse text-center text-sm">
                             <thead>
@@ -234,28 +345,44 @@ export const ParaJaizaEntry = () => {
                                         <td className="border border-[var(--color-border)] px-2 py-3 font-black">{row.paraNo}</td>
                                         <td className="border border-[var(--color-border)] px-2 py-3 font-bold">{row.paraName}</td>
                                         <td className="border border-[var(--color-border)] p-2">
-                                            <ThemedDatePicker
-                                                value={row.startDate}
-                                                onChange={(e) => handleRowChange(row.id, 'startDate', e.target.value)}
-                                                placeholder="تاریخ آغاز"
-                                                size="sm"
-                                                className="w-full"
-                                            />
+                                            {row.apiId ? (
+                                                renderReadOnlyValue(row.startDate)
+                                            ) : (
+                                                <ThemedDatePicker
+                                                    value={row.startDate}
+                                                    onChange={(value) => handleRowChange(row.id, 'startDate', value)}
+                                                    placeholder="تاریخ آغاز"
+                                                    size="sm"
+                                                    className="w-full"
+                                                />
+                                            )}
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
-                                            <ThemedDatePicker
-                                                value={row.completionDate}
-                                                onChange={(e) => handleRowChange(row.id, 'completionDate', e.target.value)}
-                                                placeholder="تاریخ اختتام"
-                                                size="sm"
-                                                className="w-full"
-                                            />
+                                            {row.apiId ? (
+                                                renderReadOnlyValue(row.completionDate)
+                                            ) : (
+                                                <ThemedDatePicker
+                                                    value={row.completionDate}
+                                                    onChange={(value) => handleRowChange(row.id, 'completionDate', value)}
+                                                    placeholder="تاریخ اختتام"
+                                                    size="sm"
+                                                    className="w-full"
+                                                />
+                                            )}
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
-                                            <input type="text" value={row.totalDays} onChange={(e) => handleRowChange(row.id, 'totalDays', e.target.value)} placeholder="کل ایام" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
+                                            {row.apiId ? (
+                                                renderReadOnlyValue(row.totalDays)
+                                            ) : (
+                                                <input type="number" min="1" value={row.totalDays} onChange={(e) => handleRowChange(row.id, 'totalDays', e.target.value)} placeholder="کل ایام" className={inputCellClassName} />
+                                            )}
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
-                                            <input type="text" value={row.remarks} onChange={(e) => handleRowChange(row.id, 'remarks', e.target.value)} placeholder="کوالٹی / تبصرہ" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
+                                            {row.apiId ? (
+                                                renderReadOnlyValue(row.remarks)
+                                            ) : (
+                                                <input type="text" value={row.remarks} onChange={(e) => handleRowChange(row.id, 'remarks', e.target.value)} placeholder="کوالٹی / تبصرہ" className={inputCellClassName} />
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -265,9 +392,9 @@ export const ParaJaizaEntry = () => {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <button type="submit" className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all">
+                    <button type="submit" disabled={isSaving} className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:cursor-not-allowed disabled:opacity-60">
                         <Save size={20} />
-                        سپارہ جائزہ محفوظ کریں
+                        {isSaving ? 'محفوظ ہو رہا ہے...' : 'سپارہ جائزہ محفوظ کریں'}
                     </button>
                 </div>
             </div>

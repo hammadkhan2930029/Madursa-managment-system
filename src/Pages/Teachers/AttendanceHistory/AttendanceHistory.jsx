@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, CheckCircle, XCircle, Clock, AlertCircle, Save, ChevronRight, Edit2, ChevronDown } from 'lucide-react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { getTeacherAttendance, saveTeacherAttendance } from '../../../Constant/AttendanceApi';
+import { deleteTeacherAttendance, getTeacherAttendance, saveTeacherAttendance } from '../../../Constant/AttendanceApi';
 import { getTeacherById } from '../../../Constant/TeachersApi';
 import { useNotificationBridge } from '../../../Components/Notifications/useNotificationBridge';
+import { getDefaultBranch } from '../../../Constant/AcademicSetupApi';
 
 const monthsUrdu = [
     'جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون',
@@ -12,23 +13,33 @@ const monthsUrdu = [
 
 const years = [2024, 2025, 2026, 2027];
 
+const formatDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getDateKey = (value) => String(value || '').slice(0, 10);
+
 const buildAttendanceHistory = (year, month, existingEntries) => {
     const data = [];
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const entryMap = new Map(existingEntries.map((entry) => [entry.date.slice(0, 10), entry]));
+    const entryMap = new Map(existingEntries.map((entry) => [getDateKey(entry.date), entry]));
 
     for (let day = daysInMonth; day >= 1; day -= 1) {
         const currentDate = new Date(year, month, day);
-        const date = currentDate.toISOString().slice(0, 10);
+        const date = formatDateKey(currentDate);
         const entry = entryMap.get(date);
 
         data.push({
+            id: entry?.id || null,
             date,
             dayName: currentDate.toLocaleDateString('ur-PK', { weekday: 'long' }),
             dayNum: day,
             status: entry?.status || 'Not Marked',
             note: entry?.remarks || '',
-            branchId: entry?.branchId || null,
+            branchId: entry?.branchId || entry?.branch?.id || null,
         });
     }
 
@@ -46,6 +57,7 @@ export const TeacherAttendanceHistory = () => {
     const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
     const [attendanceEntries, setAttendanceEntries] = useState([]);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
+    const [defaultBranchId, setDefaultBranchId] = useState('');
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -54,16 +66,18 @@ export const TeacherAttendanceHistory = () => {
     useEffect(() => {
         const loadTeacherAndAttendance = async () => {
             try {
-                const [teacherResult, attendanceResult] = await Promise.all([
+                const [teacherResult, attendanceResult, defaultBranch] = await Promise.all([
                     getTeacherById(teacherId),
                     getTeacherAttendance(`page=1&limit=366&teacherId=${teacherId}`),
+                    getDefaultBranch().catch(() => null),
                 ]);
 
                 const items = attendanceResult.items || [];
                 setTeacher(teacherResult);
                 setAttendanceEntries(items);
+                setDefaultBranchId(defaultBranch?.id ? String(defaultBranch.id) : '');
             } catch (loadError) {
-                setError(loadError.message || 'Attendance history load nahi ho saki.');
+                setError(loadError.message || 'اساتذہ کی حاضری کی تفصیل لوڈ نہیں ہو سکی۔');
             }
         };
 
@@ -72,8 +86,9 @@ export const TeacherAttendanceHistory = () => {
 
     useEffect(() => {
         const monthEntries = attendanceEntries.filter((entry) => {
-            const currentDate = new Date(entry.date);
-            return currentDate.getFullYear() === selectedYear && currentDate.getMonth() === selectedMonth;
+            const [, entryMonth] = getDateKey(entry.date).split('-').map(Number);
+            const [entryYear] = getDateKey(entry.date).split('-').map(Number);
+            return entryYear === selectedYear && entryMonth === selectedMonth + 1;
         });
 
         setAttendanceHistory(buildAttendanceHistory(selectedYear, selectedMonth, monthEntries));
@@ -106,13 +121,15 @@ export const TeacherAttendanceHistory = () => {
 
     const handleSave = async () => {
         const rowsToSave = attendanceHistory.filter((item) => item.status !== 'Not Marked');
+        const rowsToClear = attendanceHistory.filter((item) => item.status === 'Not Marked' && item.id);
 
-        if (!rowsToSave.length) {
-            setError('Save karne ke liye koi marked attendance maujood nahi.');
+        if (!rowsToSave.length && !rowsToClear.length) {
+            setError('محفوظ کرنے کے لیے کوئی حاضری منتخب نہیں ہے۔');
             return;
         }
 
-        const missingBranchRow = rowsToSave.find((item) => !item.branchId && !branchIdFromQuery);
+        const fallbackBranchId = branchIdFromQuery || defaultBranchId;
+        const missingBranchRow = rowsToSave.find((item) => !item.branchId && !fallbackBranchId);
 
         if (missingBranchRow) {
             setError('بنیادی سیٹ اپ دستیاب نہیں، حاضری محفوظ نہیں ہو سکتی۔');
@@ -125,23 +142,24 @@ export const TeacherAttendanceHistory = () => {
 
         try {
             await Promise.all(
-                rowsToSave.map((item) =>
-                    saveTeacherAttendance({
+                [
+                    ...rowsToSave.map((item) => saveTeacherAttendance({
                         teacherId: Number(teacherId),
-                        branchId: Number(item.branchId || branchIdFromQuery),
+                        branchId: Number(item.branchId || fallbackBranchId),
                         date: item.date,
                         status: item.status,
                         remarks: item.note || '',
-                    }),
-                ),
+                    })),
+                    ...rowsToClear.map((item) => deleteTeacherAttendance(`teacherId=${teacherId}&date=${item.date}`)),
+                ],
             );
 
             const refreshed = await getTeacherAttendance(`page=1&limit=366&teacherId=${teacherId}`);
             setAttendanceEntries(refreshed.items || []);
             setIsEditMode(false);
-            setSuccessMessage('Teacher attendance history update ho gayi.');
+            setSuccessMessage('استاد کی حاضری کی تفصیل کامیابی سے اپڈیٹ ہو گئی۔');
         } catch (saveError) {
-            setError(saveError.message || 'History save nahi ho saki.');
+            setError(saveError.message || 'حاضری کی تفصیل محفوظ نہیں ہو سکی۔');
         } finally {
             setIsSaving(false);
         }

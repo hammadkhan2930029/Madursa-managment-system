@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Check, ChevronDown, Pencil, Printer, Search, X } from 'lucide-react';
-import { getDailyHifzEntries, updateDailyHifzEntry } from '../../../Constant/HifzApi';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { BookOpen, Check, ChevronDown, Pencil, Printer, Search, Trash2, X } from 'lucide-react';
+import { deactivateDailyHifzEntry, getDailyHifzEntries, updateDailyHifzEntry } from '../../../Constant/HifzApi';
 import { getStudents } from '../../../Constant/StudentsApi';
 import { formatDateForInput, mapStudentsForHifz } from '../HifzUi';
 
@@ -12,6 +12,7 @@ const registerMeta = {
 const monthOptions = ['محرم', 'صفر', 'ربیع الاول', 'ربیع الثانی', 'جمادی الاول', 'جمادی الثانی', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذوالقعدہ', 'ذوالحجہ'];
 const yearOptions = ['1446ھ', '1447ھ', '1448ھ', '2025', '2026', '2027'];
 
+// eslint-disable-next-line no-unused-vars
 const filledRows = [
     {
         id: 'daily-1',
@@ -59,6 +60,7 @@ const filledRows = [
     },
 ];
 
+// eslint-disable-next-line no-unused-vars
 const emptyRows = Array.from({ length: 12 }, (_, index) => ({
     id: `empty-${index}`,
     studentId: 'STU-001',
@@ -82,7 +84,6 @@ const emptyRows = Array.from({ length: 12 }, (_, index) => ({
     quality: '',
 }));
 
-const defaultRows = [...filledRows, ...emptyRows];
 const inlineInputClassName = 'w-full min-w-[72px] h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-xs font-bold text-center outline-none focus:border-[var(--color-primary)]';
 const inlineTextInputClassName = 'w-full min-w-[110px] h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-bold text-right outline-none focus:border-[var(--color-primary)]';
 
@@ -148,14 +149,16 @@ export const DailyJaizaList = () => {
     const [savedRows, setSavedRows] = useState([]);
     const [editingRowId, setEditingRowId] = useState('');
     const [draftRow, setDraftRow] = useState(null);
+    const [deleteRow, setDeleteRow] = useState(null);
     const [studentSearch, setStudentSearch] = useState('');
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('شعبان');
     const [selectedYear, setSelectedYear] = useState('1447ھ');
     const [showStudentResults, setShowStudentResults] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    const loadDailyEntries = async (studentId = selectedStudentId) => {
+    const loadDailyEntries = useCallback(async (studentId = selectedStudentId) => {
         try {
             setIsLoading(true);
             const params = new URLSearchParams({
@@ -175,7 +178,7 @@ export const DailyJaizaList = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [selectedMonth, selectedStudentId, selectedYear]);
 
     useEffect(() => {
         let isMounted = true;
@@ -201,11 +204,11 @@ export const DailyJaizaList = () => {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [selectedMonth, selectedYear]);
 
     useEffect(() => {
         loadDailyEntries(selectedStudentId);
-    }, [selectedStudentId]);
+    }, [loadDailyEntries, selectedStudentId]);
 
     const registerRows = useMemo(() => normalizeRows(savedRows), [savedRows]);
 
@@ -267,6 +270,23 @@ export const DailyJaizaList = () => {
             await loadDailyEntries();
         } catch (error) {
             alert(error?.message || 'یومیہ جائزہ اپڈیٹ نہیں ہو سکا۔');
+        }
+    };
+
+    const confirmDeleteRow = async () => {
+        if (!deleteRow) {
+            return;
+        }
+
+        try {
+            setIsDeleting(true);
+            await deactivateDailyHifzEntry(deleteRow.apiId || deleteRow.id);
+            setDeleteRow(null);
+            await loadDailyEntries();
+        } catch (error) {
+            alert(error?.message || 'یومیہ جائزہ حذف نہیں ہو سکا۔');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -470,14 +490,23 @@ export const DailyJaizaList = () => {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => startEditing(row)}
-                                                        className="mx-auto px-4 py-2 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary)] hover:text-[#0b1120] transition-all"
-                                                    >
-                                                        <Pencil size={14} />
-                                                        ایڈٹ
-                                                    </button>
+                                                    <div className="flex items-center justify-center gap-2 min-w-[160px]">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEditing(row)}
+                                                            className="px-4 py-2 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary)] hover:text-[#0b1120] transition-all"
+                                                        >
+                                                            <Pencil size={14} />
+                                                            ایڈٹ
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDeleteRow(row)}
+                                                            className="h-10 w-10 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -495,6 +524,36 @@ export const DailyJaizaList = () => {
                     </div>
                 </div>
             </div>
+            {deleteRow && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="w-full max-w-md rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
+                        <div className="space-y-2 text-right">
+                            <h2 className="text-xl font-black text-[var(--color-text-main)]">ریکارڈ حذف کریں؟</h2>
+                            <p className="text-sm font-bold text-[var(--color-text-muted)]">
+                                کیا آپ واقعی {deleteRow.studentName || 'اس طالب علم'} کا یومیہ جائزہ حذف کرنا چاہتے ہیں؟
+                            </p>
+                        </div>
+                        <div className="mt-6 flex flex-col-reverse sm:flex-row gap-3 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteRow(null)}
+                                disabled={isDeleting}
+                                className="px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] font-bold hover:bg-[var(--color-input)] transition-all disabled:opacity-60"
+                            >
+                                نہیں
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDeleteRow}
+                                disabled={isDeleting}
+                                className="px-5 py-3 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400 font-bold hover:bg-red-500 hover:text-white transition-all disabled:opacity-60"
+                            >
+                                {isDeleting ? 'حذف ہو رہا ہے...' : 'ہاں، حذف کریں'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

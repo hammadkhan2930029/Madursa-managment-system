@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Edit2, Eye, Search, UserPlus } from 'lucide-react';
+import { Edit2, Eye, Search, Trash2, UserPlus, X } from 'lucide-react';
 import { InputField } from '../../../Components/HR/FormElements';
 import { useNavigate } from 'react-router-dom';
-import { getTeachers, updateTeacherStatus } from '../../../Constant/TeachersApi';
+import { deleteTeacher, getTeachers } from '../../../Constant/TeachersApi';
 import { useNotificationBridge } from '../../../Components/Notifications/useNotificationBridge';
 
 export const TeachersList = () => {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [teachers, setTeachers] = useState([]);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState('');
-    useNotificationBridge({ error });
+    const [success, setSuccess] = useState('');
+    useNotificationBridge({ error, success });
 
     const loadTeachers = async () => {
         try {
@@ -35,12 +38,21 @@ export const TeachersList = () => {
         [teachers, searchTerm],
     );
 
-    const handleToggleStatus = async (teacher) => {
+    const handleDeleteTeacher = async () => {
+        if (!deleteTarget) return;
+
+        setError('');
+        setSuccess('');
+        setIsDeleting(true);
         try {
-            await updateTeacherStatus(teacher.id, teacher.status === 'active' ? 'inactive' : 'active');
+            await deleteTeacher(deleteTarget.id);
+            setSuccess('استاد کامیابی سے حذف کر دیا گیا۔');
+            setDeleteTarget(null);
             await loadTeachers();
-        } catch (statusError) {
-            setError(statusError.message || 'Teacher status update nahi hua.');
+        } catch (deleteError) {
+            setError(deleteError.message || 'استاد حذف نہیں ہو سکا۔');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -113,8 +125,11 @@ export const TeachersList = () => {
                                 <button onClick={() => navigate(`/teachers/details/${teacher.id}`)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all">
                                     <Eye size={16} className="ml-2" /> دیکھئے
                                 </button>
-                                <button onClick={() => handleToggleStatus(teacher)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all">
-                                    <Edit2 size={16} className="ml-2" /> {teacher.status === 'active' ? 'بند' : 'فعال'}
+                                <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all">
+                                    <Edit2 size={16} className="ml-2" />
+                                </button>
+                                <button onClick={() => setDeleteTarget(teacher)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                                    <Trash2 size={16} className="ml-2" />
                                 </button>
                             </div>
                         </div>
@@ -161,7 +176,8 @@ export const TeachersList = () => {
                                     <td className="p-5">
                                         <div className="flex items-center justify-center gap-2">
                                             <button onClick={() => navigate(`/teachers/details/${teacher.id}`)} className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-sm"><Eye size={16} /></button>
-                                            <button onClick={() => handleToggleStatus(teacher)} className="p-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all shadow-sm"><Edit2 size={16} /></button>
+                                            <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="p-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all shadow-sm"><Edit2 size={16} /></button>
+                                            <button onClick={() => setDeleteTarget(teacher)} className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -170,6 +186,48 @@ export const TeachersList = () => {
                     </table>
                 </div>
             </div>
+
+            {deleteTarget ? (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-[2rem] border border-rose-500/20 bg-[var(--color-surface)] p-8 shadow-2xl" dir="rtl">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="text-right">
+                                <h3 className="text-xl font-black text-[var(--color-text)]">استاد حذف کرنے کی تصدیق</h3>
+                                <p className="mt-3 text-sm font-bold leading-7 text-[var(--color-text-muted)]">
+                                    کیا آپ واقعی <span className="text-rose-500">{deleteTarget.fullName}</span> کو حذف کرنا چاہتے ہیں؟
+                                    یہ عمل واپس نہیں ہو گا۔
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => !isDeleting && setDeleteTarget(null)}
+                                className="rounded-xl bg-[var(--color-bg)] p-2 text-[var(--color-text-muted)] transition-all hover:text-rose-500"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteTarget(null)}
+                                disabled={isDeleting}
+                                className="rounded-xl border border-[var(--color-border)] px-5 py-3 text-sm font-black text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                منسوخ کریں
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeleteTeacher}
+                                disabled={isDeleting}
+                                className="rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white transition-all hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-70"
+                            >
+                                {isDeleting ? 'حذف ہو رہی ہے...' : 'تصدیق کریں'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };

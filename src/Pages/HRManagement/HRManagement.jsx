@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Camera, Save, UserPlus } from 'lucide-react';
-import { InputField } from '../../Components/HR/FormElements';
-import { createTeacher } from '../../Constant/TeachersApi';
+import { InputField, SelectField } from '../../Components/HR/FormElements';
+import { createTeacher, getTeacherById, updateTeacher } from '../../Constant/TeachersApi';
+import { getSubjects } from '../../Constant/AcademicSetupApi';
+import { getQualifications } from '../../Constant/QualificationApi';
 import { useNotificationBridge } from '../../Components/Notifications/useNotificationBridge';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const INITIAL_VALUES = {
   fullName: '',
@@ -16,13 +19,81 @@ const INITIAL_VALUES = {
 };
 
 export const HRManagement = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const teacherId = searchParams.get('teacherId');
   const [formData, setFormData] = useState(INITIAL_VALUES);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [subjectOptions, setSubjectOptions] = useState([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const [qualificationOptions, setQualificationOptions] = useState([]);
+  const [isLoadingQualifications, setIsLoadingQualifications] = useState(true);
   useNotificationBridge({ error, success });
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      setIsLoadingSubjects(true);
+
+      try {
+        const result = await getSubjects('page=1&limit=100');
+        setSubjectOptions((result.items || []).filter((subject) => subject.status === 'active'));
+      } catch (loadError) {
+        setError(loadError.message || 'مضامین لوڈ نہیں ہو سکے۔');
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+
+    loadSubjects();
+  }, []);
+
+  useEffect(() => {
+    const loadQualifications = async () => {
+      setIsLoadingQualifications(true);
+
+      try {
+        const result = await getQualifications('page=1&limit=100');
+        setQualificationOptions((result.items || []).filter((qualification) => qualification.status === 'active'));
+      } catch (loadError) {
+        setError(loadError.message || 'تعلیمی اسناد لوڈ نہیں ہو سکیں۔');
+      } finally {
+        setIsLoadingQualifications(false);
+      }
+    };
+
+    loadQualifications();
+  }, []);
+
+  useEffect(() => {
+    if (!teacherId) return;
+
+    const loadTeacher = async () => {
+      setError('');
+
+      try {
+        const teacher = await getTeacherById(teacherId);
+        setFormData({
+          fullName: teacher?.fullName || '',
+          email: teacher?.email || '',
+          phone: teacher?.phone || '',
+          cnic: teacher?.cnic || '',
+          subject: teacher?.subject || '',
+          qualification: teacher?.qualification || '',
+          address: teacher?.address || '',
+          basicSalary: teacher?.basicSalary ? String(teacher.basicSalary) : '',
+        });
+        setImagePreview(teacher?.imageUrl || null);
+      } catch (loadError) {
+        setError(loadError.message || 'استاد کی تفصیل لوڈ نہیں ہو سکی۔');
+      }
+    };
+
+    loadTeacher();
+  }, [teacherId]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -34,18 +105,25 @@ export const HRManagement = () => {
     setIsSaving(true);
 
     try {
-      await createTeacher({
+      const payload = {
         ...formData,
         basicSalary: Number(formData.basicSalary || 0),
         image: imageFile,
-      });
+      };
 
-      setSuccess('Teacher successfully create ho gaye.');
+      if (teacherId) {
+        await updateTeacher(teacherId, payload);
+      } else {
+        await createTeacher(payload);
+      }
+
+      setSuccess(teacherId ? 'استاد کی معلومات کامیابی سے تبدیل ہو گئیں۔' : 'استاد کامیابی سے شامل ہو گیا۔');
       setFormData(INITIAL_VALUES);
       setImagePreview(null);
       setImageFile(null);
+      navigate('/teachers/list');
     } catch (saveError) {
-      setError(saveError.message || 'Teacher save nahi ho sake.');
+      setError(saveError.message || 'استاد محفوظ نہیں ہو سکا۔');
     } finally {
       setIsSaving(false);
     }
@@ -58,7 +136,7 @@ export const HRManagement = () => {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div>
               <h1 className="text-3xl font-black">نیا استاد شامل کریں</h1>
-              <p className="text-sm font-bold text-[var(--color-text-muted)] mt-3">Teacher profile backend API ke sath directly save hogi.</p>
+              <p className="text-sm font-bold text-[var(--color-text-muted)] mt-3">استاد کی معلومات براہ راست محفوظ ہوں گی۔</p>
             </div>
             <button
               onClick={handleSubmit}
@@ -76,9 +154,33 @@ export const HRManagement = () => {
               <InputField label="استاد کا نام" value={formData.fullName} onChange={(e) => handleChange('fullName', e.target.value)} />
               <InputField label="ای میل" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} />
               <InputField label="فون نمبر" value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} />
-              <InputField label="CNIC" value={formData.cnic} onChange={(e) => handleChange('cnic', e.target.value)} />
-              <InputField label="مضمون" value={formData.subject} onChange={(e) => handleChange('subject', e.target.value)} />
-              <InputField label="Qualification" value={formData.qualification} onChange={(e) => handleChange('qualification', e.target.value)} />
+              <InputField label="شناختی کارڈ نمبر" value={formData.cnic} onChange={(e) => handleChange('cnic', e.target.value)} />
+              <SelectField
+                label="مضمون"
+                value={formData.subject}
+                onChange={(e) => handleChange('subject', e.target.value)}
+                disabled={isLoadingSubjects}
+                options={[
+                  { value: '', label: isLoadingSubjects ? 'مضامین لوڈ ہو رہے ہیں...' : 'مضمون منتخب کریں' },
+                  ...(!subjectOptions.some((subject) => subject.name === formData.subject) && formData.subject
+                    ? [{ value: formData.subject, label: formData.subject }]
+                    : []),
+                  ...subjectOptions.map((subject) => ({ value: subject.name, label: subject.name })),
+                ]}
+              />
+              <SelectField
+                label="تعلیمی قابلیت"
+                value={formData.qualification}
+                onChange={(e) => handleChange('qualification', e.target.value)}
+                disabled={isLoadingQualifications}
+                options={[
+                  { value: '', label: isLoadingQualifications ? 'تعلیمی اسناد لوڈ ہو رہی ہیں...' : 'تعلیمی قابلیت منتخب کریں' },
+                  ...(!qualificationOptions.some((qualification) => qualification.title === formData.qualification) && formData.qualification
+                    ? [{ value: formData.qualification, label: formData.qualification }]
+                    : []),
+                  ...qualificationOptions.map((qualification) => ({ value: qualification.title, label: qualification.title })),
+                ]}
+              />
               <InputField label="بنیادی تنخواہ" type="number" value={formData.basicSalary} onChange={(e) => handleChange('basicSalary', e.target.value)} />
               <InputField label="پتہ" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} />
             </div>

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, CalendarDays, Plus, Save, Trash2, UserRound } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Plus, Save, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getClasses, getSections } from '../../../Constant/AcademicSetupApi';
 import { createWeeklyHifzEntry } from '../../../Constant/HifzApi';
 import { getStudents } from '../../../Constant/StudentsApi';
 import { getTeachers } from '../../../Constant/TeachersApi';
 import { getUniqueOptions, mapStudentsForHifz } from '../HifzUi';
+
+/* eslint-disable no-sparse-arrays */
 
 const createWeeklyRow = () => ({
     id: crypto.randomUUID(),
@@ -47,6 +49,15 @@ const rowHasContent = (row) => {
         row.classWork,
         row.quality,
     ].some((value) => String(value).trim() !== '');
+};
+
+const getWeeklyTotalMarks = (row) => {
+    const fields = ['sawal1', 'sawal2', 'sawal3', 'tahajji', 'panja', 'khudKhwani'];
+
+    return fields.reduce((total, field) => {
+        const value = Number(row[field]);
+        return Number.isFinite(value) ? total + value : total;
+    }, 0);
 };
 
 export const WeeklyJaizaForm = () => {
@@ -165,17 +176,6 @@ export const WeeklyJaizaForm = () => {
         }));
     };
 
-    const handleDeleteRow = (rowId) => {
-        if (formData.rows.length === 1) {
-            return;
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            rows: prev.rows.filter((row) => row.id !== rowId),
-        }));
-    };
-
     const toOptionalNumber = (value) => {
         if (value === '' || value === undefined || value === null) return undefined;
         return Number(value);
@@ -218,7 +218,7 @@ export const WeeklyJaizaForm = () => {
             tahajji: toOptionalNumber(row.tahajji),
             panja: toOptionalNumber(row.panja),
             khudKhwani: toOptionalNumber(row.khudKhwani),
-            classWork: row.classWork || undefined,
+            classWork: String(getWeeklyTotalMarks(row)),
             performanceStatus: row.quality || 'جید',
             remarks: row.quality || undefined,
             status: 'active',
@@ -304,60 +304,51 @@ export const WeeklyJaizaForm = () => {
                                     onChange={(e) => handleFormChange('week', e.target.value)}
                                     placeholder="1 تا 7 شعبان"
                                     dir="rtl"
-                                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 pr-14 pl-5 text-right text-sm font-bold outline-none focus:border-[var(--color-primary)]"
+                                    className="w-full h-14 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] pr-14 pl-5 text-right text-sm leading-7 font-bold outline-none focus:border-[var(--color-primary)]"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">کلاس</label>
-                            <input
-                                type="text"
-                                list="weekly-class-options"
+                            <select
                                 value={formData.className}
                                 onChange={(e) => handleFormChange('className', e.target.value)}
-                                placeholder="مثلاً حفظ اول"
-                                className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
-                            />
-                            <datalist id="weekly-class-options">
+                                className="w-full h-14 appearance-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-right text-sm leading-7 font-bold outline-none focus:border-[var(--color-primary)]"
+                            >
+                                <option value="">مثلاً حفظ اول</option>
                                 {classOptions.map((className) => (
-                                    <option key={className} value={className} />
+                                    <option key={className} value={className}>{className}</option>
                                 ))}
-                            </datalist>
+                            </select>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">سیکشن</label>
-                            <input
-                                type="text"
-                                list="weekly-section-options"
+                            <select
                                 value={formData.section}
                                 onChange={(e) => handleFormChange('section', e.target.value)}
-                                placeholder="A / B"
-                                className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
-                            />
-                            <datalist id="weekly-section-options">
+                                className="w-full h-14 appearance-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-right text-sm leading-7 font-bold outline-none focus:border-[var(--color-primary)]"
+                            >
+                                <option value="">A / B</option>
                                 {sectionOptions.map((sectionName) => (
-                                    <option key={sectionName} value={sectionName} />
+                                    <option key={sectionName} value={sectionName}>{sectionName}</option>
                                 ))}
-                            </datalist>
+                            </select>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">استاد</label>
-                            <input
-                                type="text"
-                                list="weekly-teacher-options"
+                            <select
                                 value={formData.teacher}
                                 onChange={(e) => handleFormChange('teacher', e.target.value)}
-                                placeholder="استاد کا نام"
-                                className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
-                            />
-                            <datalist id="weekly-teacher-options">
+                                className="w-full h-14 appearance-none rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-right text-sm leading-7 font-bold outline-none focus:border-[var(--color-primary)]"
+                            >
+                                <option value="">استاد کا نام</option>
                                 {teacherOptions.map((teacherName) => (
-                                    <option key={teacherName} value={teacherName} />
+                                    <option key={teacherName} value={teacherName}>{teacherName}</option>
                                 ))}
-                            </datalist>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -389,7 +380,6 @@ export const WeeklyJaizaForm = () => {
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[120px]">خود اعتمادی<br />کل نمبر 10</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[130px]">کل حاسل<br />کردہ نمبر</th>
                                     <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[160px]">کیفیت</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[80px]">حذف</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -398,19 +388,16 @@ export const WeeklyJaizaForm = () => {
                                         <td className="border border-[var(--color-border)] p-2">
                                             <div className="relative">
                                                 <UserRound className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-primary)]" size={16} />
-                                                <input
-                                                    type="text"
-                                                    list="weekly-student-options"
+                                                <select
                                                     value={row.studentName}
                                                     onChange={(e) => handleRowChange(row.id, 'studentName', e.target.value)}
-                                                    placeholder="طالب علم / ولدیت"
-                                                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 pr-9 pl-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]"
-                                                />
-                                                <datalist id="weekly-student-options">
+                                                    className="w-full h-11 appearance-none rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] pr-9 pl-3 text-right text-sm leading-7 font-bold outline-none focus:border-[var(--color-primary)]"
+                                                >
+                                                    <option value="">طالب علم / ولدیت</option>
                                                     {studentOptions.map((student) => (
-                                                        <option key={student.id} value={student.label} />
+                                                        <option key={student.id} value={student.label}>{student.label}</option>
                                                     ))}
-                                                </datalist>
+                                                </select>
                                             </div>
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
@@ -450,7 +437,7 @@ export const WeeklyJaizaForm = () => {
                                             <input type="number" min="0" max="10" value={row.khudKhwani} onChange={(e) => handleRowChange(row.id, 'khudKhwani', e.target.value)} className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
-                                            <input type="text" value={row.classWork} onChange={(e) => handleRowChange(row.id, 'classWork', e.target.value)} placeholder="کلاس ورک" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
+                                            <input type="text" value={getWeeklyTotalMarks(row) || ''} readOnly placeholder="کلاس ورک" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" />
                                         </td>
                                         <td className="border border-[var(--color-border)] p-2">
                                             <select
@@ -463,16 +450,6 @@ export const WeeklyJaizaForm = () => {
                                                     <option key={option} value={option}>{option}</option>
                                                 ))}
                                             </select>
-                                        </td>
-                                        <td className="border border-[var(--color-border)] p-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteRow(row.id)}
-                                                disabled={formData.rows.length === 1}
-                                                className={`mx-auto h-10 w-10 rounded-xl flex items-center justify-center transition-all ${formData.rows.length === 1 ? 'bg-red-500/5 text-red-300 cursor-not-allowed' : 'border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white'}`}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
                                         </td>
                                     </tr>
                                 ))}

@@ -34,3 +34,8 @@ export const saveTeacherAttendance = async (payload) => {
   const result = await apiRequest('/attendance/teachers', withJson('POST', payload));
   return result?.data;
 };
+
+export const deleteTeacherAttendance = async (query = '') => {
+  const result = await apiRequest(`/attendance/teachers${query ? `?${query}` : ''}`, withToken({ method: 'DELETE' }));
+  return result?.data;
+};

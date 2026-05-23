@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CalendarDays, Check, Pencil, Printer, Search, UserRound, X } from 'lucide-react';
-import { getWeeklyHifzEntries, updateWeeklyHifzEntry } from '../../../Constant/HifzApi';
+import { BookOpen, CalendarDays, Check, Pencil, Printer, Search, Trash2, UserRound, X } from 'lucide-react';
+import { deactivateWeeklyHifzEntry, getWeeklyHifzEntries, updateWeeklyHifzEntry } from '../../../Constant/HifzApi';
 import { formatDateForDisplay, formatDateForInput } from '../HifzUi';
 
 const reportMeta = {
@@ -87,7 +87,9 @@ export const WeeklyJaizaList = () => {
     const [savedRows, setSavedRows] = useState([]);
     const [editingRowId, setEditingRowId] = useState('');
     const [draftRow, setDraftRow] = useState(null);
+    const [deleteRow, setDeleteRow] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const loadWeeklyEntries = async () => {
         try {
@@ -149,6 +151,23 @@ export const WeeklyJaizaList = () => {
             await loadWeeklyEntries();
         } catch (error) {
             alert(error?.message || 'ہفتہ وار جائزہ اپڈیٹ نہیں ہو سکا۔');
+        }
+    };
+
+    const confirmDeleteRow = async () => {
+        if (!deleteRow) {
+            return;
+        }
+
+        try {
+            setIsDeleting(true);
+            await deactivateWeeklyHifzEntry(deleteRow.apiId || deleteRow.id);
+            setDeleteRow(null);
+            await loadWeeklyEntries();
+        } catch (error) {
+            alert(error?.message || 'ہفتہ وار جائزہ حذف نہیں ہو سکا۔');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -318,14 +337,23 @@ export const WeeklyJaizaList = () => {
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => startEditing(row)}
-                                                            className="mx-auto px-4 py-2 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary)] hover:text-[#0b1120] transition-all"
-                                                        >
-                                                            <Pencil size={14} />
-                                                            ایڈٹ
-                                                        </button>
+                                                        <div className="flex items-center justify-center gap-2 min-w-[160px]">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => startEditing(row)}
+                                                                className="px-4 py-2 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-primary)] hover:text-[#0b1120] transition-all"
+                                                            >
+                                                                <Pencil size={14} />
+                                                                ایڈٹ
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDeleteRow(row)}
+                                                                className="h-10 w-10 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </td>
                                             </tr>
@@ -343,6 +371,36 @@ export const WeeklyJaizaList = () => {
                     </div>
                 </div>
             </div>
+            {deleteRow && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="w-full max-w-md rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
+                        <div className="space-y-2 text-right">
+                            <h2 className="text-xl font-black text-[var(--color-text-main)]">ریکارڈ حذف کریں؟</h2>
+                            <p className="text-sm font-bold text-[var(--color-text-muted)]">
+                                کیا آپ واقعی {deleteRow.studentName || 'اس طالب علم'} کا ہفتہ وار جائزہ حذف کرنا چاہتے ہیں؟
+                            </p>
+                        </div>
+                        <div className="mt-6 flex flex-col-reverse sm:flex-row gap-3 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteRow(null)}
+                                disabled={isDeleting}
+                                className="px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] font-bold hover:bg-[var(--color-input)] transition-all disabled:opacity-60"
+                            >
+                                نہیں
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDeleteRow}
+                                disabled={isDeleting}
+                                className="px-5 py-3 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400 font-bold hover:bg-red-500 hover:text-white transition-all disabled:opacity-60"
+                            >
+                                {isDeleting ? 'حذف ہو رہا ہے...' : 'ہاں، حذف کریں'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

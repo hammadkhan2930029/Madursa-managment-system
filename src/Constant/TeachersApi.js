@@ -65,3 +65,8 @@ export const updateTeacherStatus = async (id, status) => {
   const result = await apiRequest(`/teachers/${id}/status`, withJson('PATCH', { status }));
   return result?.data;
 };
+
+export const deleteTeacher = async (id) => {
+  const result = await apiRequest(`/teachers/${id}`, withToken({ method: 'DELETE' }));
+  return result?.data;
+};

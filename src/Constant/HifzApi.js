@@ -62,6 +62,11 @@ export const getMonthlyHifzEntries = async (query = '') => {
   return getData(result, { items: [], meta: null });
 };
 
+export const getMonthlyHifzEntryById = async (id) => {
+  const result = await apiRequest(`/hifz/monthly/${id}`, withToken({ method: 'GET' }));
+  return getData(result, null);
+};
+
 export const createMonthlyHifzEntry = async (payload) => {
   const result = await apiRequest('/hifz/monthly', withJson('POST', payload));
   return getData(result, null);

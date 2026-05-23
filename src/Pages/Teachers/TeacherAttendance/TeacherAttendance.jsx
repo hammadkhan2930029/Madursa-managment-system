@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Users, CheckCircle, XCircle, Clock, Phone, BookOpen, Save, Search, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ThemedDatePicker } from '../../../Components/DatePicker/ThemedDatePicker';
@@ -14,9 +14,16 @@ const STATUS_OPTIONS = [
     { value: 'Late', label: 'تاخیر' },
 ];
 
+const formatDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export const TeacherAttendance = () => {
     const navigate = useNavigate();
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
     const [selectedBranchId, setSelectedBranchId] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [teachers, setTeachers] = useState([]);
@@ -25,6 +32,45 @@ export const TeacherAttendance = () => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     useNotificationBridge({ error, success: successMessage });
+
+    const loadAttendance = useCallback(async () => {
+        setError('');
+        setSuccessMessage('');
+
+        if (!selectedBranchId) {
+            setError('حاضری کے لیے بنیادی سیٹ اپ دستیاب نہیں۔');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const [teacherResult, attendanceResult] = await Promise.all([
+                getTeachers('page=1&limit=100'),
+                getTeacherAttendance(`page=1&limit=100&branchId=${selectedBranchId}&date=${selectedDate}`),
+            ]);
+
+            const attendanceMap = new Map(
+                (attendanceResult.items || []).map((entry) => [String(entry.teacherId || entry.teacher?.id), entry]),
+            );
+
+            setTeachers(
+                (teacherResult.items || []).map((teacher) => {
+                    const existingAttendance = attendanceMap.get(String(teacher.id));
+
+                    return {
+                        ...teacher,
+                        status: existingAttendance?.status || 'Present',
+                        remarks: existingAttendance?.remarks || '',
+                    };
+                }),
+            );
+        } catch (loadError) {
+            setError(loadError.message || 'اساتذہ کی حاضری لوڈ نہیں ہو سکی۔');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [selectedBranchId, selectedDate]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -43,51 +89,17 @@ export const TeacherAttendance = () => {
                     })),
                 );
             } catch (loadError) {
-                setError(loadError.message || 'Teacher attendance data load nahi ho saka.');
+                setError(loadError.message || 'اساتذہ کی حاضری کا ڈیٹا لوڈ نہیں ہو سکا۔');
             }
         };
 
         loadInitialData();
     }, []);
 
-    const loadAttendance = async () => {
-        setError('');
-        setSuccessMessage('');
-
-        if (!selectedBranchId) {
-            setError('حاضری کے لیے بنیادی سیٹ اپ دستیاب نہیں۔');
-            return;
-        }
-
-        setIsLoading(true);
-
-        try {
-            const [teacherResult, attendanceResult] = await Promise.all([
-                getTeachers('page=1&limit=100'),
-                getTeacherAttendance(`page=1&limit=100&branchId=${selectedBranchId}&date=${selectedDate}`),
-            ]);
-
-            const attendanceMap = new Map(
-                (attendanceResult.items || []).map((entry) => [String(entry.teacherId), entry]),
-            );
-
-            setTeachers(
-                (teacherResult.items || []).map((teacher) => {
-                    const existingAttendance = attendanceMap.get(String(teacher.id));
-
-                    return {
-                        ...teacher,
-                        status: existingAttendance?.status || 'Present',
-                        remarks: existingAttendance?.remarks || '',
-                    };
-                }),
-            );
-        } catch (loadError) {
-            setError(loadError.message || 'Teacher attendance load nahi ho saki.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    useEffect(() => {
+        if (!selectedBranchId) return;
+        loadAttendance();
+    }, [loadAttendance, selectedBranchId]);
 
     const handleStatusChange = (id, newStatus) => {
         setTeachers((prev) => prev.map((teacher) => (teacher.id === id ? { ...teacher, status: newStatus } : teacher)));
@@ -116,9 +128,9 @@ export const TeacherAttendance = () => {
                 ),
             );
 
-            setSuccessMessage('Teacher attendance backend me save ho gayi.');
+            setSuccessMessage('اساتذہ کی حاضری کامیابی سے محفوظ ہو گئی۔');
         } catch (saveError) {
-            setError(saveError.message || 'Teacher attendance save nahi ho saki.');
+            setError(saveError.message || 'اساتذہ کی حاضری محفوظ نہیں ہو سکی۔');
         } finally {
             setIsSaving(false);
         }
@@ -153,8 +165,8 @@ export const TeacherAttendance = () => {
                 <SummaryCard title="رخصت" count={stats.leave} icon={Clock} color="border-amber-500" textColor="text-amber-500" />
             </div>
 
-            <div className="bg-[var(--color-surface)] rounded-[2rem] shadow-xl border border-[var(--color-border)]/5 overflow-hidden">
-                <div className="p-6 border-b border-[var(--color-border)]/10 flex flex-col gap-4">
+            <div className="bg-[var(--color-surface)] rounded-[2rem] shadow-xl border border-[var(--color-border)]/5 overflow-visible">
+                <div className="relative z-[90] p-6 border-b border-[var(--color-border)]/10 flex flex-col gap-4">
                     <div className="flex flex-col xl:flex-row justify-between items-center gap-4">
                         <div className="flex flex-col lg:flex-row items-center gap-4 w-full xl:w-auto">
                             <h2 className="text-xl font-bold text-[var(--text-color)]">روزانہ حاضری شیٹ</h2>
@@ -188,7 +200,7 @@ export const TeacherAttendance = () => {
                         </button>
                     </div>
 
-                    {isLoading ? <div className="text-sm font-bold text-[var(--color-text-muted)]">Attendance load ho rahi hai...</div> : null}
+                    {isLoading ? <div className="text-sm font-bold text-[var(--color-text-muted)]">حاضری لوڈ ہو رہی ہے...</div> : null}
                 </div>
 
                 <div className="overflow-x-auto hidden lg:block">

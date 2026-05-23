@@ -210,7 +210,6 @@ export const SideBar = () => {
             subMenu: [
                 { id: 't_list', label: 'فہرست اساتذہ', path: '/teachers/list' },
                 { id: 't_attendance', label: 'حاضری', path: '/teachers/attendance' },
-                { id: 't_schedule ', label: 'نظام الاوقات', path: '/teachers/schedule ' },
                 { id: 't_schedule ', label: 'نظام الاوقات', path: '/teachers/schedule' },
 
 

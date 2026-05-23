@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookOpen, CalendarDays, Save, School, UserRound } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getStudentProfiles, subscribeToStudentProfiles } from '../../../Constant/StudentProfiles';
-import { getMonthlyJaizaEntryById, saveMonthlyJaizaEntry } from '../../../Constant/MonthlyHifzStore';
+import { useNavigate } from 'react-router-dom';
+import { getClasses, getSections } from '../../../Constant/AcademicSetupApi';
+import { createMonthlyHifzEntry, getMonthlyHifzEntries } from '../../../Constant/HifzApi';
+import { getStudents } from '../../../Constant/StudentsApi';
+import { getTeachers } from '../../../Constant/TeachersApi';
+import { filterStudentsForHifz, getUniqueOptions, mapStudentsForHifz } from '../HifzUi';
 
 const hijriMonths = [
     'محرم الحرام',
@@ -39,7 +42,7 @@ const createInitialFormData = () => ({
     section: '',
     teacher: '',
     studentId: '',
-    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+    academicYear: String(new Date().getFullYear()),
     selectedMonth: '',
     remarks: '',
     monthlyRows: hijriMonths.map(createMonthRow),
@@ -64,86 +67,161 @@ const baseFieldClassName = 'w-full h-14 rounded-2xl border border-[var(--color-b
 const selectFieldClassName = `${baseFieldClassName} appearance-none pl-12`;
 const iconSelectFieldClassName = `${baseFieldClassName} appearance-none pr-12 pl-14`;
 const readOnlyFieldClassName = 'w-full h-14 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-base font-bold outline-none';
+const tableInputClassName = 'w-full h-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-sm leading-7 font-bold text-right outline-none focus:border-[var(--color-primary)]';
+
+const getYearValue = (value) => {
+    const yearMatch = String(value).match(/\d{4}/);
+    return yearMatch ? Number(yearMatch[0]) : new Date().getFullYear();
+};
+
+const getRemarkValue = (remarks = '', label) => {
+    const part = remarks.split('|').map((item) => item.trim()).find((item) => item.startsWith(`${label}:`));
+    return part ? part.slice(label.length + 1).trim() : '';
+};
+
+const mergeRowsWithSavedEntries = (entries = []) => (
+    hijriMonths.map((monthName, index) => {
+        const savedEntry = entries.find((entry) => Number(entry.month) === index + 1);
+
+        if (!savedEntry) {
+            return createMonthRow(monthName);
+        }
+
+        return {
+            ...createMonthRow(monthName),
+            sabaqStart: savedEntry.startSabq || '',
+            sabaqEnd: savedEntry.endSabq || '',
+            totalKhwandagi: savedEntry.totalRecitation || '',
+            sabaqNama: getRemarkValue(savedEntry.remarks, 'سبق ناغہ'),
+            sabqiNama: getRemarkValue(savedEntry.remarks, 'سبقی ناغہ'),
+            manzilNama: getRemarkValue(savedEntry.remarks, 'منزل ناغہ'),
+            absentDays: getRemarkValue(savedEntry.remarks, 'غیر حاضری'),
+            leaveDays: getRemarkValue(savedEntry.remarks, 'رخصت'),
+            transferStatus: savedEntry.performanceStatus || '',
+            reason: getRemarkValue(savedEntry.remarks, 'وجہ'),
+        };
+    })
+);
 
 export const MonthlyJaizaEntry = () => {
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [students, setStudents] = useState(() => getStudentProfiles());
+    const [students, setStudents] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [formData, setFormData] = useState(createInitialFormData);
-    const [editingId, setEditingId] = useState('');
-
-    const editId = searchParams.get('edit');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isLoadingSavedMonths, setIsLoadingSavedMonths] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = subscribeToStudentProfiles((profiles) => {
-            setStudents(profiles);
-        });
+        let isMounted = true;
 
-        return unsubscribe;
+        const loadOptions = async () => {
+            try {
+                const [studentResult, classResult, sectionResult, teacherResult] = await Promise.all([
+                    getStudents('page=1&limit=100&status=active'),
+                    getClasses('page=1&limit=100&status=active'),
+                    getSections('page=1&limit=100&status=active'),
+                    getTeachers('page=1&limit=100&status=active'),
+                ]);
+
+                if (isMounted) {
+                    setStudents(mapStudentsForHifz(studentResult.items || []));
+                    setClasses(classResult.items || []);
+                    setSections(sectionResult.items || []);
+                    setTeachers(teacherResult.items || []);
+                }
+            } catch (error) {
+                alert(error?.message || 'ماہانہ جائزہ کی معلومات لوڈ نہیں ہو سکیں۔');
+            }
+        };
+
+        loadOptions();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const classOptions = useMemo(() => (
+        classes.length
+            ? [...new Set(classes.map((item) => item.name).filter(Boolean))]
+            : getUniqueOptions(students, 'className')
+    ), [classes, students]);
+
+    const sectionOptions = useMemo(() => {
+        const setupSections = sections
+            .filter((section) => !formData.className || section.class?.name === formData.className)
+            .map((section) => section.name)
+            .filter(Boolean);
+
+        if (setupSections.length) return [...new Set(setupSections)];
+
+        return getUniqueOptions(filterStudentsForHifz(students, formData.className, ''), 'sectionName');
+    }, [formData.className, sections, students]);
+
+    const filteredStudents = useMemo(
+        () => {
+            if (!formData.className && !formData.section) {
+                return students;
+            }
+
+            return filterStudentsForHifz(students, formData.className, formData.section);
+        },
+        [formData.className, formData.section, students],
+    );
+
+    const selectedStudent = useMemo(
+        () => students.find((student) => String(student.id) === String(formData.studentId)) || null,
+        [formData.studentId, students],
+    );
+
+    const teacherOptions = useMemo(
+        () => [...new Set(teachers.map((teacher) => teacher.fullName || teacher.name).filter(Boolean))],
+        [teachers],
+    );
+
+    const teacherSelectOptions = useMemo(
+        () => [...new Set([formData.teacher, ...teacherOptions].filter(Boolean))],
+        [formData.teacher, teacherOptions],
+    );
+
+    const loadSavedMonthlyRows = useCallback(async (studentId, year) => {
+        if (!studentId) {
+            return;
+        }
+
+        try {
+            setIsLoadingSavedMonths(true);
+            const params = new URLSearchParams({
+                page: '1',
+                limit: '100',
+                status: 'active',
+                studentId: String(studentId),
+                year: String(year),
+            });
+            const result = await getMonthlyHifzEntries(params.toString());
+            const savedEntries = result.items || [];
+
+            setFormData((prev) => ({
+                ...prev,
+                monthlyRows: mergeRowsWithSavedEntries(savedEntries),
+                remarks: savedEntries.find((entry) => entry.remarks)?.remarks || prev.remarks,
+            }));
+        } catch (error) {
+            alert(error?.message || 'محفوظ شدہ ماہانہ جائزہ لوڈ نہیں ہو سکا۔');
+        } finally {
+            setIsLoadingSavedMonths(false);
+        }
     }, []);
 
     useEffect(() => {
-        if (!editId) {
-            setEditingId('');
-            setFormData(createInitialFormData());
+        if (!formData.studentId) {
             return;
         }
 
-        const savedEntry = getMonthlyJaizaEntryById(editId);
-
-        if (!savedEntry) {
-            return;
-        }
-
-        setEditingId(savedEntry.id);
-        setFormData({
-            ...createInitialFormData(),
-            ...savedEntry,
-            monthlyRows: hijriMonths.map((monthName) => {
-                const existingRow = savedEntry.monthlyRows?.find((row) => row.monthName === monthName);
-                return existingRow
-                    ? { ...createMonthRow(monthName), ...existingRow }
-                    : createMonthRow(monthName);
-            }),
-        });
-    }, [editId]);
-
-    const classOptions = useMemo(() => (
-        [...new Set(students.map((student) => student.classInfo?.className).filter(Boolean))]
-    ), [students]);
-
-    const sectionOptions = useMemo(() => {
-        const scopedStudents = formData.className
-            ? students.filter((student) => student.classInfo?.className === formData.className)
-            : students;
-
-        return [...new Set(scopedStudents.map((student) => student.classInfo?.section).filter(Boolean))];
-    }, [formData.className, students]);
-
-    const filteredStudents = useMemo(() => (
-        students.filter((student) => {
-            const matchesClass = formData.className ? student.classInfo?.className === formData.className : true;
-            const matchesSection = formData.section ? student.classInfo?.section === formData.section : true;
-            return matchesClass && matchesSection;
-        })
-    ), [formData.className, formData.section, students]);
-
-    const selectedStudent = useMemo(() => (
-        students.find((student) => student.id === formData.studentId || student.admission?.idNo === formData.studentId) || null
-    ), [formData.studentId, students]);
-
-    useEffect(() => {
-        if (!selectedStudent) {
-            return;
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            className: selectedStudent.classInfo?.className || prev.className,
-            section: selectedStudent.classInfo?.section || prev.section,
-            teacher: selectedStudent.education?.teacherName || prev.teacher,
-        }));
-    }, [selectedStudent]);
+        loadSavedMonthlyRows(formData.studentId, getYearValue(formData.academicYear));
+    }, [formData.studentId, formData.academicYear, loadSavedMonthlyRows]);
 
     const handleFieldChange = (field, value) => {
         setFormData((prev) => {
@@ -152,16 +230,24 @@ export const MonthlyJaizaEntry = () => {
             if (field === 'className') {
                 nextState.section = '';
                 nextState.studentId = '';
-                nextState.teacher = '';
             }
 
             if (field === 'section') {
                 nextState.studentId = '';
-                nextState.teacher = '';
             }
 
-            if (field === 'studentId' && !value) {
-                nextState.teacher = '';
+            if (field === 'studentId') {
+                const student = students.find((item) => String(item.id) === String(value));
+
+                if (student) {
+                    nextState.className = student.className || nextState.className;
+                    nextState.section = student.sectionName || nextState.section;
+                    nextState.teacher = student.teacherName || nextState.teacher;
+                }
+
+                if (!value) {
+                    nextState.teacher = '';
+                }
             }
 
             return nextState;
@@ -177,7 +263,35 @@ export const MonthlyJaizaEntry = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const buildRemarks = (row) => {
+        const parts = [
+            formData.teacher ? `استاد: ${formData.teacher}` : '',
+            row.sabaqNama ? `سبق ناغہ: ${row.sabaqNama}` : '',
+            row.sabqiNama ? `سبقی ناغہ: ${row.sabqiNama}` : '',
+            row.manzilNama ? `منزل ناغہ: ${row.manzilNama}` : '',
+            row.absentDays ? `غیر حاضری: ${row.absentDays}` : '',
+            row.leaveDays ? `رخصت: ${row.leaveDays}` : '',
+            row.transferStatus ? `امتحانی نمبرات: ${row.transferStatus}` : '',
+            row.reason ? `وجہ: ${row.reason}` : '',
+            formData.remarks ? `ریمارکس: ${formData.remarks}` : '',
+        ].filter(Boolean);
+
+        return parts.join(' | ') || undefined;
+    };
+
+    const buildPayload = (row) => ({
+        studentId: Number(formData.studentId),
+        month: hijriMonths.indexOf(row.monthName) + 1,
+        year: getYearValue(formData.academicYear),
+        startSabq: row.sabaqStart || undefined,
+        endSabq: row.sabaqEnd || undefined,
+        totalRecitation: row.totalKhwandagi || undefined,
+        performanceStatus: row.transferStatus || 'جید',
+        remarks: buildRemarks(row),
+        status: 'active',
+    });
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.className || !formData.section || !formData.studentId) {
@@ -185,20 +299,23 @@ export const MonthlyJaizaEntry = () => {
             return;
         }
 
-        if (!formData.monthlyRows.some(rowHasContent)) {
+        const rowsToSave = formData.monthlyRows.filter(rowHasContent);
+
+        if (!rowsToSave.length) {
             alert('براہ کرم کم از کم ایک ماہ کی کارکردگی درج کریں۔');
             return;
         }
 
-        const savedEntry = saveMonthlyJaizaEntry({
-            ...formData,
-            id: editingId || undefined,
-        });
-
-        setEditingId(savedEntry.id);
-        setSearchParams({ edit: savedEntry.id });
-        console.log('Monthly Jaiza saved:', savedEntry);
-        alert(editingId ? 'ماہانہ جائزہ کامیابی سے اپڈیٹ ہو گیا۔' : 'ماہانہ جائزہ کامیابی سے محفوظ ہو گیا۔');
+        try {
+            setIsSaving(true);
+            await Promise.all(rowsToSave.map((row) => createMonthlyHifzEntry(buildPayload(row))));
+            alert('ماہانہ جائزہ ڈیٹابیس میں محفوظ ہو گیا۔');
+            await loadSavedMonthlyRows(formData.studentId, getYearValue(formData.academicYear));
+        } catch (error) {
+            alert(error?.message || 'ماہانہ جائزہ محفوظ نہیں ہو سکا۔');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -215,9 +332,9 @@ export const MonthlyJaizaEntry = () => {
                                 <BookOpen size={28} />
                             </div>
                             <div className="space-y-1">
-                                <h1 className="text-2xl md:text-3xl font-black">{editingId ? 'ماہانہ جائزہ میں ترمیم' : 'ماہانہ جائزہ اندراج'}</h1>
+                                <h1 className="text-2xl md:text-3xl font-black">ماہانہ جائزہ اندراج</h1>
                                 <p className="text-sm font-bold text-[var(--color-text-muted)] mt-5">
-                                    {editingId ? 'محفوظ شدہ ریکارڈ میں تبدیلی کریں اور دوبارہ محفوظ کریں' : 'طالب علم منتخب کریں اور اس کی ماہ بہ ماہ کارکردگی درج کریں'}
+                                    طالب علم منتخب کریں اور اس کی ماہ بہ ماہ کارکردگی درج کریں
                                 </p>
                             </div>
                         </div>
@@ -264,7 +381,7 @@ export const MonthlyJaizaEntry = () => {
                                     <option value="">طالب علم منتخب کریں</option>
                                     {filteredStudents.map((student) => (
                                         <option key={student.id} value={student.id}>
-                                            {student.personal?.fullName} - {student.personal?.fatherName}
+                                            {student.fullName} - {student.admissionNumber}
                                         </option>
                                     ))}
                                 </select>
@@ -273,12 +390,20 @@ export const MonthlyJaizaEntry = () => {
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">تعلیمی سال</label>
-                            <input type="text" value={formData.academicYear} onChange={(e) => handleFieldChange('academicYear', e.target.value)} placeholder="1447ھ / 2026" className={baseFieldClassName} />
+                            <input type="text" value={formData.academicYear} onChange={(e) => handleFieldChange('academicYear', e.target.value)} placeholder="2026" className={baseFieldClassName} />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-black text-[var(--color-text-muted)]">استاد</label>
-                            <input type="text" value={formData.teacher} onChange={(e) => handleFieldChange('teacher', e.target.value)} placeholder="استاد کا نام" className={baseFieldClassName} />
+                            <div className="relative">
+                                <UserRound className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-primary)]" size={18} />
+                                <select value={formData.teacher} onChange={(e) => handleFieldChange('teacher', e.target.value)} className={iconSelectFieldClassName}>
+                                    <option value="">استاد کا نام</option>
+                                    {teacherSelectOptions.map((teacherName) => (
+                                        <option key={teacherName} value={teacherName}>{teacherName}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -295,25 +420,29 @@ export const MonthlyJaizaEntry = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-black text-[var(--color-text-muted)]">رول نمبر</label>
-                            <input type="text" value={selectedStudent?.classInfo?.rollNo || ''} readOnly placeholder="خودکار" className={readOnlyFieldClassName} />
+                            <label className="text-xs font-black text-[var(--color-text-muted)]">داخلہ نمبر</label>
+                            <input type="text" value={selectedStudent?.admissionNumber || ''} readOnly placeholder="خودکار" className={readOnlyFieldClassName} />
                         </div>
                     </div>
                 </div>
 
                 {selectedStudent && (
                     <div className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:p-5 shadow-sm">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 text-sm font-bold">
-                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">نام طالب علم: {selectedStudent.personal?.fullName}</div>
-                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">ولدیت: {selectedStudent.personal?.fatherName}</div>
-                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">تاریخ داخلہ: {selectedStudent.admission?.admissionDate || '-'}</div>
-                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">کلاس: {selectedStudent.classInfo?.className} ({selectedStudent.classInfo?.section})</div>
-                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">شناخت: {selectedStudent.admission?.idNo}</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 text-sm font-bold">
+                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">نام طالب علم: {selectedStudent.fullName}</div>
+                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">ولدیت: {selectedStudent.fatherName}</div>
+                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">کلاس: {selectedStudent.className} ({selectedStudent.sectionName})</div>
+                            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">داخلہ نمبر: {selectedStudent.admissionNumber}</div>
                         </div>
                     </div>
                 )}
 
                 <div className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:p-5 shadow-sm overflow-hidden">
+                    {isLoadingSavedMonths && (
+                        <div className="mb-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-sm font-bold text-[var(--color-text-muted)]">
+                            محفوظ شدہ ماہانہ ریکارڈ لوڈ ہو رہا ہے...
+                        </div>
+                    )}
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[1700px] border-collapse text-center text-sm">
                             <thead>
@@ -343,16 +472,16 @@ export const MonthlyJaizaEntry = () => {
                                     return (
                                         <tr key={row.id} className={rowClassName}>
                                             <td className="border border-[var(--color-border)] px-3 py-3 font-black">{row.monthName}</td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.sabaqStart} onChange={(e) => handleRowChange(row.id, 'sabaqStart', e.target.value)} placeholder="مثلاً 5واں پارہ" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.sabaqEnd} onChange={(e) => handleRowChange(row.id, 'sabaqEnd', e.target.value)} placeholder="مثلاً 7واں پارہ" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.totalKhwandagi} onChange={(e) => handleRowChange(row.id, 'totalKhwandagi', e.target.value)} placeholder="کل مقدار" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.sabaqNama} onChange={(e) => handleRowChange(row.id, 'sabaqNama', e.target.value)} placeholder="0" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.sabqiNama} onChange={(e) => handleRowChange(row.id, 'sabqiNama', e.target.value)} placeholder="0" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.manzilNama} onChange={(e) => handleRowChange(row.id, 'manzilNama', e.target.value)} placeholder="0" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.absentDays} onChange={(e) => handleRowChange(row.id, 'absentDays', e.target.value)} placeholder="0" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.leaveDays} onChange={(e) => handleRowChange(row.id, 'leaveDays', e.target.value)} placeholder="0" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.transferStatus} onChange={(e) => handleRowChange(row.id, 'transferStatus', e.target.value)} placeholder="اگر کوئی ہو" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
-                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.reason} onChange={(e) => handleRowChange(row.id, 'reason', e.target.value)} placeholder="مختصر وجہ" className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-2.5 px-3 text-sm font-bold outline-none focus:border-[var(--color-primary)]" /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.sabaqStart} onChange={(e) => handleRowChange(row.id, 'sabaqStart', e.target.value)} placeholder="مثلاً 5واں پارہ" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.sabaqEnd} onChange={(e) => handleRowChange(row.id, 'sabaqEnd', e.target.value)} placeholder="مثلاً 7واں پارہ" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.totalKhwandagi} onChange={(e) => handleRowChange(row.id, 'totalKhwandagi', e.target.value)} placeholder="کل مقدار" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.sabaqNama} onChange={(e) => handleRowChange(row.id, 'sabaqNama', e.target.value)} placeholder="0" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.sabqiNama} onChange={(e) => handleRowChange(row.id, 'sabqiNama', e.target.value)} placeholder="0" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.manzilNama} onChange={(e) => handleRowChange(row.id, 'manzilNama', e.target.value)} placeholder="0" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.absentDays} onChange={(e) => handleRowChange(row.id, 'absentDays', e.target.value)} placeholder="0" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="number" min="0" value={row.leaveDays} onChange={(e) => handleRowChange(row.id, 'leaveDays', e.target.value)} placeholder="0" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.transferStatus} onChange={(e) => handleRowChange(row.id, 'transferStatus', e.target.value)} placeholder="مثلاً جید" className={tableInputClassName} /></td>
+                                            <td className="border border-[var(--color-border)] p-2"><input type="text" value={row.reason} onChange={(e) => handleRowChange(row.id, 'reason', e.target.value)} placeholder="مختصر وجہ" className={tableInputClassName} /></td>
                                         </tr>
                                     );
                                 })}
@@ -362,14 +491,14 @@ export const MonthlyJaizaEntry = () => {
 
                     <div className="mt-4 space-y-2">
                         <label className="text-xs font-black text-[var(--color-text-muted)]">عمومی ریمارکس</label>
-                        <textarea value={formData.remarks} onChange={(e) => handleFieldChange('remarks', e.target.value)} placeholder="اس طالب علم کی سالانہ یا ماہانہ مجموعی کیفیت یہاں لکھیں" className="w-full rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)] min-h-[110px]" />
+                        <textarea value={formData.remarks} onChange={(e) => handleFieldChange('remarks', e.target.value)} placeholder="اس طالب علم کی ماہانہ مجموعی کیفیت یہاں لکھیں" className="w-full rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-bg)] py-3 px-4 text-sm font-bold outline-none focus:border-[var(--color-primary)] min-h-[110px]" />
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <button type="submit" className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all">
+                    <button type="submit" disabled={isSaving} className="w-full md:w-auto px-10 py-4 bg-[var(--color-primary)] text-[#0b1120] font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[var(--color-primary)]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:cursor-not-allowed disabled:opacity-60">
                         <Save size={20} />
-                        {editingId ? 'ماہانہ جائزہ اپڈیٹ کریں' : 'ماہانہ جائزہ محفوظ کریں'}
+                        {isSaving ? 'محفوظ ہو رہا ہے...' : 'ماہانہ جائزہ محفوظ کریں'}
                     </button>
                 </div>
             </div>

@@ -54,7 +54,6 @@ export const DailyJaizaEntry = () => {
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
-    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -62,7 +61,6 @@ export const DailyJaizaEntry = () => {
 
         const loadStudents = async () => {
             try {
-                setIsLoadingStudents(true);
                 const [studentResult, classResult, sectionResult] = await Promise.all([
                     getStudents('page=1&limit=100&status=active'),
                     getClasses('page=1&limit=100&status=active'),
@@ -75,10 +73,6 @@ export const DailyJaizaEntry = () => {
                 }
             } catch (error) {
                 alert(error?.message || 'طلبہ لوڈ نہیں ہو سکے۔');
-            } finally {
-                if (isMounted) {
-                    setIsLoadingStudents(false);
-                }
             }
         };
 
