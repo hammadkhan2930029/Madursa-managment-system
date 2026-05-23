@@ -228,7 +228,7 @@ export const TeacherAttendanceHistory = () => {
                     <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#00d094] to-[#008a63] flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-[#00d094]/20 mb-4">
                         {teacher?.fullName?.charAt(0) || 'T'}
                     </div>
-                    <h1 className="text-2xl font-black text-[var(--color-text)]">{teacher?.fullName || 'Teacher'}</h1>
+                    <h1 className="text-2xl font-black text-[var(--color-text)]">{teacher?.fullName || 'استاد'}</h1>
                     <span className="bg-[#00d094]/10 text-[#00d094] text-xs px-3 py-1 rounded-full font-bold mt-2 border border-[#00d094]/20">{teacherId}</span>
                     <p className="text-sm opacity-60 mt-4 font-medium text-[var(--color-text)]">{teacher?.subject || '---'}</p>
 
@@ -243,7 +243,7 @@ export const TeacherAttendanceHistory = () => {
                     <div className="flex justify-between items-center mb-5">
                         <h3 className="font-bold text-[var(--color-text)] flex items-center gap-2">
                             <Calendar size={18} className="text-[var(--color-primary)]" />
-                            {monthsUrdu[selectedMonth]} {selectedYear} - حاضری کا پیٹرن
+                            {monthsUrdu[selectedMonth]} {selectedYear} - حاضری کا نقشہ
                         </h3>
                         <span className="text-xs opacity-50 text-[var(--color-text)]">(کسی تاریخ پر کلک کریں)</span>
                     </div>
@@ -264,7 +264,7 @@ export const TeacherAttendanceHistory = () => {
                             >
                                 <span className="text-lg font-black">{item.dayNum}</span>
                                 <span className="text-[7px] uppercase opacity-70">
-                                    {item.status === 'Present' ? 'Pre' : item.status === 'Absent' ? 'Abs' : item.status === 'Leave' ? 'Lea' : item.status === 'Late' ? 'Lat' : 'Mis'}
+                                    {item.status === 'Present' ? 'حاضر' : item.status === 'Absent' ? 'غائب' : item.status === 'Leave' ? 'رخصت' : item.status === 'Late' ? 'تاخیر' : 'خالی'}
                                 </span>
                             </button>
                         ))}

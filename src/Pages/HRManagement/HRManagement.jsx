@@ -102,6 +102,12 @@ export const HRManagement = () => {
   const handleSubmit = async () => {
     setError('');
     setSuccess('');
+
+    if (!formData.fullName.trim() || !formData.subject.trim() || !Number(formData.basicSalary)) {
+      setError('براہ کرم استاد کا نام، مضمون اور بنیادی تنخواہ لازمی درج کریں۔');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -135,7 +141,7 @@ export const HRManagement = () => {
         <div className="bg-[var(--color-surface)] rounded-[2.5rem] p-8 shadow-sm border border-[var(--color-border)]">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-black">نیا استاد شامل کریں</h1>
+              <h1 className="text-3xl font-black">{teacherId ? 'استاد کی معلومات تبدیل کریں' : 'نیا استاد شامل کریں'}</h1>
               <p className="text-sm font-bold text-[var(--color-text-muted)] mt-3">استاد کی معلومات براہ راست محفوظ ہوں گی۔</p>
             </div>
             <button
@@ -184,13 +190,12 @@ export const HRManagement = () => {
               <InputField label="بنیادی تنخواہ" type="number" value={formData.basicSalary} onChange={(e) => handleChange('basicSalary', e.target.value)} />
               <InputField label="پتہ" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} />
             </div>
-
           </div>
 
           <div className="bg-[var(--color-surface)] rounded-[2.5rem] p-8 shadow-sm border border-[var(--color-border)] flex flex-col items-center justify-center gap-5">
             <div className="w-48 h-48 rounded-[2rem] border-2 border-dashed border-[var(--color-border)] overflow-hidden flex items-center justify-center bg-[var(--color-bg)]">
               {imagePreview ? (
-                <img src={imagePreview} alt="teacher" className="w-full h-full object-cover" />
+                <img src={imagePreview} alt="استاد" className="w-full h-full object-cover" />
               ) : (
                 <UserPlus size={60} className="text-[var(--color-text-muted)]" />
               )}

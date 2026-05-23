@@ -1,0 +1,36 @@
+import { apiRequest } from './Api';
+import { getAdminToken } from './AdminAuth';
+
+const withToken = (options = {}) => ({
+  ...options,
+  token: getAdminToken(),
+});
+
+const withJson = (method, body) =>
+  withToken({
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+export const getFundCollections = async (query = '') => {
+  const result = await apiRequest(`/finance/fund-collections${query ? `?${query}` : ''}`, withToken({ method: 'GET' }));
+  return result?.data || { items: [], meta: null };
+};
+
+export const createFundCollection = async (payload) => {
+  const result = await apiRequest('/finance/fund-collections', withJson('POST', payload));
+  return result?.data;
+};
+
+export const updateFundCollection = async (id, payload) => {
+  const result = await apiRequest(`/finance/fund-collections/${id}`, withJson('PUT', payload));
+  return result?.data;
+};
+
+export const deactivateFundCollection = async (id) => {
+  const result = await apiRequest(`/finance/fund-collections/${id}/deactivate`, withToken({ method: 'PATCH' }));
+  return result?.data;
+};

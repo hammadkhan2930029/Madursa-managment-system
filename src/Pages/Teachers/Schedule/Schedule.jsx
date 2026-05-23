@@ -197,7 +197,7 @@ export const TeachersScheduleManager = () => {
         <div className="p-4 md:p-6 space-y-8 bg-[var(--color-bg)] min-h-screen pb-24 text-[var(--color-text)] font-urdu" dir="rtl">
             <div className="bg-[var(--color-surface)] flex justify-between items-center border border-[var(--color-border)] pr-4 py-4 rounded-[2.5rem] shadow-xl">
                 <div>
-                    <h1 className="text-3xl font-black text-[var(--color-text)]"> اساتذہ شیڈول مینیجر </h1>
+                    <h1 className="text-3xl font-black text-[var(--color-text)]">اساتذہ شیڈول مینیجر</h1>
                     <p className="text-md opacity-60 mt-5">اساتذہ کا تعلیمی ٹائم ٹیبل ترتیب دیں</p>
                 </div>
                 <div className="hidden md:block bg-[var(--color-surface)] p-3 rounded-2xl border border-[var(--color-border)]/10">
@@ -260,7 +260,7 @@ export const TeachersScheduleManager = () => {
                         </div>
 
                         <div>
-                            <label className="text-[11px] font-bold opacity-60 block mb-2">ٹیچر منتخب کریں</label>
+                            <label className="text-[11px] font-bold opacity-60 block mb-2">استاد منتخب کریں</label>
                             <select
                                 className="w-full bg-[var(--color-bg)] border border-[var(--color-border)]/10 rounded-xl p-3 text-sm outline-none cursor-pointer"
                                 value={formData.teacherId}
@@ -270,7 +270,7 @@ export const TeachersScheduleManager = () => {
                                     setFormData({ ...formData, teacherId: event.target.value, teacher: selectedTeacher?.fullName || '' });
                                 }}
                             >
-                                <option value="">{isLoadingOptions ? 'لوڈ ہو رہا ہے...' : 'ٹیچر منتخب کریں'}</option>
+                                <option value="">{isLoadingOptions ? 'لوڈ ہو رہا ہے...' : 'استاد منتخب کریں'}</option>
                                 {teacherOptions.map((item) => <option key={item.id} value={item.id}>{item.fullName}</option>)}
                             </select>
                         </div>
@@ -423,8 +423,8 @@ export const TeachersScheduleManager = () => {
             {schedules.length === 0 && (
                 <div className="bg-[var(--color-surface)] rounded-[2.5rem] border-2 border-dashed border-[var(--color-border)]/10 py-20 text-center opacity-40">
                     <BookOpen size={60} className="mx-auto mb-4 text-[var(--color-primary)]" />
-                    <p className="text-lg font-black">ابھی تک کوئی کلاس ایڈ نہیں کی گئی</p>
-                    <p className="text-sm mt-5">اوپر دیئے گئے فارم سے نیا شیڈول بنانا شروع کریں</p>
+                    <p className="text-lg font-black">ابھی تک کوئی کلاس شامل نہیں کی گئی</p>
+                    <p className="text-sm mt-5">اوپر دیے گئے فارم سے نیا شیڈول بنانا شروع کریں</p>
                 </div>
             )}
         </div>

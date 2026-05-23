@@ -77,6 +77,32 @@ body,
   font-family: 'Noto Nastaliq Urdu', serif !important;
 }
 
+.finance-heads-page input,
+.finance-heads-page select {
+  min-height: 78px;
+  line-height: 2.45 !important;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+  background-color: var(--color-input) !important;
+  color: var(--color-text-main) !important;
+  border-color: var(--color-border) !important;
+  color-scheme: dark;
+}
+
+.finance-heads-page button {
+  line-height: 2 !important;
+}
+
+.finance-heads-page select option {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-main) !important;
+}
+
+.finance-heads-page select option:checked {
+  background-color: var(--color-primary) !important;
+  color: var(--color-bg) !important;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
 }

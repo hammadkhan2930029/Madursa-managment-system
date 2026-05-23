@@ -207,12 +207,12 @@ export const TeacherAttendance = () => {
                     <table className="w-full text-right border-collapse">
                         <thead>
                             <tr className="bg-black/5 text-[var(--text-color)] opacity-70 uppercase text-xs font-bold">
-                                <th className="p-4">ID</th>
+                                <th className="p-4">نمبر</th>
                                 <th className="p-4">نام</th>
                                 <th className="p-4">مضمون</th>
                                 <th className="p-4">موبائل نمبر</th>
                                 <th className="p-4 text-center">حاضری</th>
-                                <th className="p-4 text-center">ایکشن</th>
+                                <th className="p-4 text-center">کارروائی</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--color-border)]/5">

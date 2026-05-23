@@ -1,35 +1,100 @@
-import React, { useState } from 'react';
-import { Save, Copy, Plus, Trash2, User, Phone, Wallet, Landmark, FileText, Printer, X, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Save, Copy, Plus, Trash2, User, Wallet, FileText, Printer, CheckCircle } from 'lucide-react';
 /* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
 import { BankSearchField, DateField, InputField } from '../../../../Components/HR/FormElements';
 import { pakistanBanks } from '../../../../Constant/AllBanks';
 import {AppImages} from '../../../../Constant/AppImages'
+import { useNotificationBridge } from '../../../../Components/Notifications/useNotificationBridge';
+import { createFundCollection, getFundCollections } from '../../../../Constant/FundCollectionsApi';
+import { getAdminSession, getApiAssetUrl } from '../../../../Constant/AdminAuth';
+import { printFundReceipt } from '../../../../Utils/FundReceiptPrint';
+
+const donationTypes = {
+    'صدقات واجبہ': ['زکوٰۃ', 'فطرہ', 'فدیہ', 'کفارہ', 'عشر', 'قربانی', 'نذر'],
+    'صدقات نافلہ': ['صدقہ', 'عطیہ', 'تعمیرات', 'تعلیمی فنڈ', 'افطار', 'قرآن فنڈ', 'عام تعاون'],
+};
 
 const createFundEntry = () => ({
     id: crypto.randomUUID(),
-    paymentMode: 'Cash',
-    type: '',
-    subCategory: '',
+    paymentMode: 'نقد',
+    donationType: 'صدقات واجبہ',
+    donationSubType: 'زکوٰۃ',
     amount: '',
     purpose: '',
     receiptNo: '',
+    details: '',
     bankName: '',
     branchCode: '',
     chequeNo: '',
     chequeDate: new Date().toISOString().split('T')[0]
 });
 
+const getPaymentModeLabel = (mode) => {
+    return mode;
+};
+
+const parseAmount = (value) => Number(String(value || '').replace(/,/g, '')) || 0;
+
+const formatAmount = (value) => parseAmount(value).toLocaleString('en-US');
+
+const formatAmountInput = (value) => {
+    const cleaned = String(value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+    const [wholePart, ...decimalParts] = cleaned.split('.');
+    const whole = wholePart.replace(/^0+(?=\d)/, '');
+    const formattedWhole = whole ? Number(whole).toLocaleString('en-US') : '';
+    const decimal = decimalParts.length ? `.${decimalParts.join('').slice(0, 2)}` : cleaned.includes('.') ? '.' : '';
+    return `${formattedWhole}${decimal}`;
+};
+
+const normalizeContactNumber = (value) => String(value || '').replace(/[\s-]/g, '');
+
+const isValidContactNumber = (value) => /^(03\d{9}|\+923\d{9}|923\d{9})$/.test(normalizeContactNumber(value));
+
+const formatContactInput = (value) => String(value || '').replace(/[^\d+]/g, '').slice(0, 13);
+
 export const FundCollection = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [donorInfo, setDonorInfo] = useState({ name: '', careOf: '', number: '' });
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-    const donationTypes = {
-        "واجبی (Wajiba)": ["زکوٰۃ", "فطرہ", "فدیہ", "کفارہ", "قربانی"],
-        "نفلی (Nafila)": ["عام صدقہ", "تعمیرات", "عطیہ", "افطار پارٹی", "تعلیمی فنڈ"]
-    };
+    useNotificationBridge({ error, success });
 
     const [funds, setFunds] = useState(() => [createFundEntry()]);
+
+    useEffect(() => {
+        const contactNumber = normalizeContactNumber(donorInfo.number);
+        if (!isValidContactNumber(contactNumber)) return undefined;
+
+        let isCancelled = false;
+        const timer = window.setTimeout(async () => {
+            try {
+                const data = await getFundCollections(`search=${encodeURIComponent(contactNumber)}&page=1&limit=5`);
+                if (isCancelled) return;
+
+                const matchedEntry = (data.items || []).find((item) => normalizeContactNumber(item.phone) === contactNumber);
+                if (!matchedEntry) return;
+
+                setDonorInfo((prev) => {
+                    if (normalizeContactNumber(prev.number) !== contactNumber) return prev;
+                    return {
+                        ...prev,
+                        name: matchedEntry.donorName || prev.name,
+                        careOf: matchedEntry.careOf || prev.careOf,
+                    };
+                });
+            } catch {
+                // Search is helpful, not mandatory; save validation handles real errors.
+            }
+        }, 450);
+
+        return () => {
+            isCancelled = true;
+            window.clearTimeout(timer);
+        };
+    }, [donorInfo.number]);
 
     const handleAddFund = () => setFunds([...funds, createFundEntry()]);
     const handleCopyFund = (index) => setFunds([...funds, { ...funds[index], id: crypto.randomUUID() }]);
@@ -38,22 +103,49 @@ export const FundCollection = () => {
     const updateFund = (index, field, value) => {
         const newFunds = [...funds];
         newFunds[index][field] = value;
-        if (field === 'type') newFunds[index]['subCategory'] = '';
+        if (field === 'donationType') {
+            newFunds[index].donationSubType = donationTypes[value]?.[0] || '';
+        }
         setFunds(newFunds);
+    };
+
+    const buildRemarks = (fund) => {
+        const details = [
+            donorInfo.name ? `نام دہندہ: ${donorInfo.name}` : '',
+            donorInfo.careOf ? `ولدیت: ${donorInfo.careOf}` : '',
+            donorInfo.number ? `فون نمبر: ${donorInfo.number}` : '',
+            fund.paymentMode ? `ادائیگی: ${getPaymentModeLabel(fund.paymentMode)}` : '',
+            fund.donationType ? `عطیہ کی قسم: ${fund.donationType}` : '',
+            fund.donationSubType ? `ذیلی قسم: ${fund.donationSubType}` : '',
+            fund.purpose ? `مقصد: ${fund.purpose}` : '',
+            fund.receiptNo ? `رسید نمبر: ${fund.receiptNo}` : '',
+            fund.details ? `تفصیل: ${fund.details}` : '',
+            fund.bankName ? `بینک: ${fund.bankName}` : '',
+            fund.branchCode ? `برانچ کوڈ: ${fund.branchCode}` : '',
+            fund.chequeNo ? `چیک نمبر: ${fund.chequeNo}` : '',
+        ].filter(Boolean);
+
+        return details.join(' | ').slice(0, 255);
     };
 
     const handlePrint = () => {
         const printWindow = window.open('', '_blank');
-        const totalAmount = funds.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const session = getAdminSession();
+        const madrassaProfile = session?.madrassaProfile || {};
+        const madrassaName = madrassaProfile.name || 'دارالعلوم المحمدیہ';
+        const profileLogo = madrassaProfile.logoUrl ? getApiAssetUrl(madrassaProfile.logoUrl) : '';
+        const receiptLogo = profileLogo || new URL(AppImages.logo, window.location.origin).toString();
+        const totalAmount = funds.reduce((acc, curr) => acc + parseAmount(curr.amount), 0);
         const currentDate = new Date().toLocaleDateString('en-GB');
         const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const cashTotal = funds.filter(f => f.paymentMode === 'Cash').reduce((a, b) => a + Number(b.amount || 0), 0);
-        const chequeTotal = funds.filter(f => f.paymentMode === 'Cheque').reduce((a, b) => a + Number(b.amount || 0), 0);
+        const cashTotal = funds.filter(f => f.paymentMode === 'نقد').reduce((a, b) => a + parseAmount(b.amount), 0);
+        const chequeTotal = funds.filter(f => f.paymentMode === 'چیک').reduce((a, b) => a + parseAmount(b.amount), 0);
+        const onlineTotal = funds.filter(f => f.paymentMode === 'آن لائن').reduce((a, b) => a + parseAmount(b.amount), 0);
 
         printWindow.document.write(`
         <html dir="rtl">
             <head>
-                <title>A5 Receipt</title>
+                <title>رسید</title>
                 <script src="https://cdn.tailwindcss.com"></script>
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
@@ -70,35 +162,40 @@ export const FundCollection = () => {
                     .urdu-font { font-family: 'Noto Nastaliq Urdu', serif; }
                     
                     /* A5 dimensions constraint */
-                    .a5-page {
-                        width: 148mm;
-                        height: 210mm;
-                        padding: 10mm;
-                        margin: auto;
-                        box-sizing: border-box;
-                        overflow: hidden;
-                        display: flex;
-                        flex-direction: column;
-                        background: white;
-                    }
+                 .a5-page {
+  width: 148mm;
+  min-height: 210mm;
+  padding: 10mm;
+  margin: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  position: relative;
+}
                 </style>
             </head>
             <body class="bg-gray-100">
-                <div class="a5-page shadow-lg">
+                <div class="a5-page shadow-lg relative">
                     <div class="flex justify-between text-[8px] text-gray-500 mb-2">
                         <span>وقتِ پرنٹ: ${currentDate} | ${currentTime}</span>
                         <span dir="ltr">ID: ${donorInfo.name ? donorInfo.name.substring(0, 5) : '---'}</span>
                     </div>
                     <div>
-                       <div class="text-center mb-4 border-b-2 border-green-700 pb-2">
-                             <h1 class="urdu-font text-xl font-bold text-green-800">جامعہ مدرسہ (آپ کا نام)</h1>
+                       <div class="relative text-center mb-4 border-b-2 border-green-700 pb-3">
+                             <img 
+                                src="${receiptLogo}" 
+                                alt="مدرسہ لوگو" 
+                                class="w-14 h-14 object-contain mx-auto mb-2"
+                             />
+                             <h1 class="urdu-font text-xl font-bold text-green-800">${madrassaName}</h1>
                              <span class="mt-3 urdu-font text-xs bg-green-700 text-white px-3 py-3 rounded-full inline-block mt-1">الیکٹرانک رسیدِ عطیات</span>
                         </div>
                     </div>
                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
                         <img 
-                             src={${AppImages.logo} 
-                             alt="Watermark Logo" 
+                             src="${receiptLogo}" 
+                             alt="مدرسہ لوگو" 
                              class="w-1/2 opacity-5 -rotate-12 object-contain"
                           />
                     </div>
@@ -114,8 +211,8 @@ export const FundCollection = () => {
                         </div>
                     </div>
 
-                    <div class="flex-grow overflow-hidden">
-                        <table class="w-full text-right border-collapse">
+                  <div class="fund-section flex-1 flex items-center">
+  <table class="w-full text-right border-collapse">
                             <thead>
                                 <tr class="bg-green-700 text-white urdu-font text-[10px]">
                                     <th class="p-1 border border-green-800 text-center">شمار</th>
@@ -128,9 +225,9 @@ export const FundCollection = () => {
                                 ${funds.map((f, i) => `
                                     <tr class="border-b border-gray-200">
                                         <td class="p-1 text-center border-x">${i + 1}</td>
-                                        <td class="p-1 border-x">${f.type} - ${f.subCategory}</td>
-                                        <td class="p-1 text-center border-x">${f.paymentMode === 'Cash' ? 'نقد' : 'چیک'}</td>
-                                        <td class="p-1 text-center font-bold border-x">${f.amount}/-</td>
+                                        <td class="p-1 border-x">${f.donationType} - ${f.donationSubType}</td>
+                                        <td class="p-1 text-center border-x">${getPaymentModeLabel(f.paymentMode)}</td>
+                                        <td class="p-1 text-center font-bold border-x">${formatAmount(f.amount)}/-</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -144,12 +241,14 @@ export const FundCollection = () => {
                                     <tr class="bg-gray-50 border-b">
                                         <td class="p-1 border-l urdu-font text-center font-bold">نقد</td>
                                         <td class="p-1 border-l urdu-font text-center font-bold">چیک</td>
+                                        <td class="p-1 border-l urdu-font text-center font-bold">آن لائن</td>
                                         <td class="p-1 urdu-font text-center font-bold bg-green-50 text-green-800">میزان کل</td>
                                     </tr>
                                     <tr>
-                                        <td class="p-1 border-l text-center">${cashTotal}/-</td>
-                                        <td class="p-1 border-l text-center">${chequeTotal}/-</td>
-                                        <td class="p-1 text-center font-extrabold text-sm bg-green-100 text-green-900">${totalAmount}/-</td>
+                                        <td class="p-1 border-l text-center">${formatAmount(cashTotal)}/-</td>
+                                        <td class="p-1 border-l text-center">${formatAmount(chequeTotal)}/-</td>
+                                        <td class="p-1 border-l text-center">${formatAmount(onlineTotal)}/-</td>
+                                        <td class="p-1 text-center font-extrabold text-sm bg-green-100 text-green-900">${formatAmount(totalAmount)}/-</td>
                                     </tr>
                                 </table>
                             </div>
@@ -186,10 +285,72 @@ export const FundCollection = () => {
         printWindow.document.close();
     };
 
-    const handleFinalSave = (shouldPrint) => {
-        setIsModalOpen(false);
-        if (shouldPrint) handlePrint();
-        else alert("ڈیٹا محفوظ کر لیا گیا!");
+    const handleFinalSave = async (shouldPrint) => {
+        if (!isValidContactNumber(donorInfo.number)) {
+            setError('براہ کرم درست رابطہ نمبر درج کریں، مثلاً 03001234567۔');
+            return;
+        }
+
+        if (!donorInfo.name.trim()) {
+            setError('براہ کرم نام دہندہ درج کریں۔');
+            return;
+        }
+
+        const invalidFund = funds.find((fund) => !fund.donationType || !fund.donationSubType || !parseAmount(fund.amount));
+        if (invalidFund) {
+            setError('براہ کرم ہر فنڈ میں عطیہ کی قسم، ذیلی قسم اور رقم درج کریں۔');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            setError('');
+            const collectionGroupId = `FG-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+            await Promise.all(
+                funds.map((fund) =>
+                    createFundCollection({
+                        collectionGroupId,
+                        donorName: donorInfo.name.trim(),
+                        careOf: donorInfo.careOf.trim(),
+                        phone: normalizeContactNumber(donorInfo.number),
+                        paymentMode: fund.paymentMode,
+                        donationType: fund.donationType,
+                        donationSubType: fund.donationSubType,
+                        purpose: fund.purpose.trim(),
+                        amount: parseAmount(fund.amount),
+                        receiptNo: fund.receiptNo.trim(),
+                        details: fund.details.trim(),
+                        paymentDate: fund.chequeDate || new Date().toISOString().split('T')[0],
+                        remarks: buildRemarks(fund),
+                    })
+                )
+            );
+
+            setIsModalOpen(false);
+            setSuccess('فنڈ وصولی کامیابی سے محفوظ ہو گئی۔');
+            if (shouldPrint) {
+                printFundReceipt({
+                    donorInfo,
+                    collectionGroupId,
+                    funds: funds.map((fund) => ({
+                        ...fund,
+                        collectionGroupId,
+                        donorName: donorInfo.name.trim(),
+                        careOf: donorInfo.careOf.trim(),
+                        phone: normalizeContactNumber(donorInfo.number),
+                        amount: parseAmount(fund.amount),
+                        paymentDate: fund.chequeDate || new Date().toISOString().split('T')[0],
+                    })),
+                });
+            }
+            setFunds([createFundEntry()]);
+            setDonorInfo({ name: '', careOf: '', number: '' });
+        } catch (err) {
+            setError(err?.message || 'فنڈ وصولی محفوظ نہیں ہو سکی۔');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -209,9 +370,13 @@ export const FundCollection = () => {
                     className="bg-[var(--color-surface)] rounded-[2rem] p-6 border border-[var(--color-border)] shadow-sm">
                     <div className="flex items-center gap-2 mb-6 border-b border-[var(--color-border)] pb-3">
                         <User className="text-[var(--color-primary)]" size={20} />
-                        <h2 className="text-xl font-bold">ذاتی معلومات (Personal Info)</h2>
+                        <h2 className="text-xl font-bold">ذاتی معلومات</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold pr-2">رابطہ نمبر</label>
+                            <input type="text" dir="ltr" value={donorInfo.number} onChange={(e) => setDonorInfo({ ...donorInfo, number: formatContactInput(e.target.value) })} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)] outline-none text-right" placeholder="03001234567" />
+                        </div>
                         <div className="space-y-2">
                             <label className="text-sm font-semibold pr-2">نام دہندہ</label>
                             <input type="text" value={donorInfo.name} onChange={(e) => setDonorInfo({ ...donorInfo, name: e.target.value })} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)] outline-none" placeholder="احمد علی..." />
@@ -219,10 +384,6 @@ export const FundCollection = () => {
                         <div className="space-y-2">
                             <label className="text-sm font-semibold pr-2">ولدیت / ولد</label>
                             <input type="text" value={donorInfo.careOf} onChange={(e) => setDonorInfo({ ...donorInfo, careOf: e.target.value })} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)] outline-none" placeholder="نام..." />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold pr-2">فون نمبر</label>
-                            <input type="text" dir="ltr" value={donorInfo.number} onChange={(e) => setDonorInfo({ ...donorInfo, number: e.target.value })} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)] outline-none text-right" placeholder="03xx-xxxxxxx" />
                         </div>
                     </div>
                 </motion.div>
@@ -249,34 +410,37 @@ export const FundCollection = () => {
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold">ادائیگی کا طریقہ</label>
                                     <select value={fund.paymentMode} onChange={(e) => updateFund(index, 'paymentMode', e.target.value)} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] outline-none">
-                                        <option value="Cash">Cash (نقد)</option>
-                                        <option value="Cheque">Cheque (چیک)</option>
-                                        <option value="online">Online (آن لائن)</option>
+                                        <option value="نقد">نقد</option>
+                                        <option value="چیک">چیک</option>
+                                        <option value="آن لائن">آن لائن</option>
 
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold">قسم (Type)</label>
-                                    <select value={fund.type} onChange={(e) => updateFund(index, 'type', e.target.value)} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] outline-none">
-                                        <option value="">منتخب کریں...</option>
-                                        {Object.keys(donationTypes).map(t => <option key={t} value={t}>{t}</option>)}
+                                    <label className="text-sm font-semibold">عطیہ کی قسم</label>
+                                    <select value={fund.donationType} onChange={(e) => updateFund(index, 'donationType', e.target.value)} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] outline-none">
+                                        {Object.keys(donationTypes).map((type) => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold">ذیلی قسم (Sub-Type)</label>
-                                    <select value={fund.subCategory} onChange={(e) => updateFund(index, 'subCategory', e.target.value)} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] outline-none">
-                                        <option value="">منتخب کریں...</option>
-                                        {fund.type && donationTypes[fund.type].map(st => <option key={st} value={st}>{st}</option>)}
+                                    <label className="text-sm font-semibold">عطیہ کی ذیلی قسم</label>
+                                    <select value={fund.donationSubType} onChange={(e) => updateFund(index, 'donationSubType', e.target.value)} className="w-full bg-[var(--color-input)] p-3 rounded-xl border border-[var(--color-border)] outline-none">
+                                        {(donationTypes[fund.donationType] || []).map((subType) => (
+                                            <option key={subType} value={subType}>{subType}</option>
+                                        ))}
                                     </select>
                                 </div>
-                                <InputField label='رقم' placeholder="00000" type="number" value={fund.amount} onChange={(e) => updateFund(index, 'amount', e.target.value)} />
+                                <InputField label='مقصد' placeholder="مثلاً مدرسہ، تعمیرات، طلبہ..." value={fund.purpose} onChange={(e) => updateFund(index, 'purpose', e.target.value)} />
+                                <InputField label='رقم' placeholder="00,000" type="text" value={fund.amount} onChange={(e) => updateFund(index, 'amount', formatAmountInput(e.target.value))} />
                                 <InputField label="رسید نمبر" placeholder="R-101" value={fund.receiptNo} onChange={(e) => updateFund(index, 'receiptNo', e.target.value)} />
                                 <div className="space-y-2 lg:col-span-3">
-                                    <InputField label='مقصد / تفصیل' placeholder="کوئی خاص وجہ یا پیغام..." value={fund.purpose} onChange={(e) => updateFund(index, 'purpose', e.target.value)} />
+                                    <InputField label='تفصیل' placeholder="اضافی تفصیل درج کریں..." value={fund.details} onChange={(e) => updateFund(index, 'details', e.target.value)} />
                                 </div>
                             </div>
 
-                            {fund.paymentMode === 'Cheque' && (
+                            {fund.paymentMode === 'چیک' && (
                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                                     className="mt-6 p-4 bg-[var(--color-surface)] rounded-2xl border border-blue-200 grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <BankSearchField label=" بینک کا نام" value={fund.bankName} options={pakistanBanks} isDark={true} onSelect={(bank) => updateFund(index, 'bankName', bank)} onChange={(val) => updateFund(index, 'bankName', val)} />
@@ -294,7 +458,7 @@ export const FundCollection = () => {
                     <button onClick={handleAddFund} className="flex-1 min-w-[150px] bg-[var(--color-input)] text-[var(--color-text-main)] py-4 rounded-2xl border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)] flex items-center justify-center gap-2 font-bold">
                         <Plus size={20} /> ایک اور فنڈ شامل کریں
                     </button>
-                    <button onClick={() => setIsModalOpen(true)} className="flex-1 min-w-[150px] bg-[var(--color-primary)] text-white py-4 rounded-2xl shadow-lg shadow-[var(--color-primary)]/20 flex items-center justify-center gap-2 font-bold transition-all hover:scale-[1.02]">
+                    <button onClick={() => setIsModalOpen(true)} disabled={isSaving} className="flex-1 min-w-[150px] bg-[var(--color-primary)] text-white py-4 rounded-2xl shadow-lg shadow-[var(--color-primary)]/20 flex items-center justify-center gap-2 font-bold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed">
                         <Save size={20} /> ڈیٹا محفوظ کریں
                     </button>
                 </div>
@@ -307,9 +471,9 @@ export const FundCollection = () => {
                                 <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle size={32} /></div>
                                 <h3 className="text-xl font-bold mb-2">ڈیٹا محفوظ کریں</h3>
                                 <div className="space-y-3 mt-6">
-                                    <button onClick={() => handleFinalSave(true)} className="w-full bg-[var(--color-primary)] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Printer size={18} /> محفوظ اور پرنٹ کریں</button>
-                                    <button onClick={() => handleFinalSave(false)} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Save size={18} /> صرف محفوظ کریں</button>
-                                    <button onClick={() => setIsModalOpen(false)} className="w-full text-gray-400 py-2 text-sm font-bold underline">کینسل کریں</button>
+                                    <button onClick={() => handleFinalSave(true)} disabled={isSaving} className="w-full bg-[var(--color-primary)] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"><Printer size={18} /> {isSaving ? 'محفوظ ہو رہا ہے...' : 'محفوظ اور پرنٹ کریں'}</button>
+                                    <button onClick={() => handleFinalSave(false)} disabled={isSaving} className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"><Save size={18} /> {isSaving ? 'محفوظ ہو رہا ہے...' : 'صرف محفوظ کریں'}</button>
+                                    <button onClick={() => setIsModalOpen(false)} disabled={isSaving} className="w-full text-gray-400 py-2 text-sm font-bold underline disabled:opacity-60">کینسل کریں</button>
                                 </div>
                             </motion.div>
                         </div>

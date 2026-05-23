@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Briefcase, ChevronLeft, ChevronUp, ChevronDown, CreditCard, Edit, Printer, User, Wallet } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { getTeacherById } from '../../../Constant/TeachersApi';
+
+const statusLabel = (status) => (status === 'active' ? 'فعال' : 'غیر فعال');
 
 const InfoField = ({ label, value, dir = 'rtl' }) => (
     <div className="space-y-1 print:break-inside-avoid">
@@ -33,6 +35,7 @@ const DetailSection = ({ id, title, icon, isOpen, onToggle, children }) => (
 
 export const EmployeeDetails = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [showPrintPreview, setShowPrintPreview] = useState(false);
     const [openSection, setOpenSection] = useState('personal');
     const [teacher, setTeacher] = useState(null);
@@ -44,7 +47,7 @@ export const EmployeeDetails = () => {
                 const result = await getTeacherById(id);
                 setTeacher(result);
             } catch (loadError) {
-                setError(loadError.message || 'Teacher detail load nahi ho saki.');
+                setError(loadError.message || 'استاد کی تفصیل لوڈ نہیں ہو سکی۔');
             }
         };
 
@@ -60,17 +63,17 @@ export const EmployeeDetails = () => {
     }
 
     if (!teacher) {
-        return <div className="p-6 text-[var(--color-text-muted)] font-bold">Teacher detail load ho rahi hai...</div>;
+        return <div className="p-6 text-[var(--color-text-muted)] font-bold">استاد کی تفصیل لوڈ ہو رہی ہے...</div>;
     }
 
     return (
         <div>
             {showPrintPreview && (
-                <div className="flex flex-row justify-between">
+                <div className="flex flex-row justify-between" dir="rtl">
                     <button onClick={() => setShowPrintPreview(!showPrintPreview)} className="flex items-center text-[12px] gap-2 bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-all">
-                        Back <ChevronLeft size={22} />
+                        واپس جائیں <ChevronLeft size={22} />
                     </button>
-                    <p className="print:hidden">Press (ctrl + p)</p>
+                    <p className="print:hidden">پرنٹ کے لیے کنٹرول اور پی دبائیں</p>
                 </div>
             )}
 
@@ -84,19 +87,19 @@ export const EmployeeDetails = () => {
                             <h1 className="text-3xl font-black text-[var(--color-text-main)]">{teacher.fullName}</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-5">
                                 <span className={`text-[10px] font-bold px-4 py-1.5 rounded-full border ${teacher.status === 'active' ? 'bg-emerald-500/10 text-[var(--color-primary)] border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
-                                    {teacher.status}
+                                    {statusLabel(teacher.status)}
                                 </span>
                                 <span className="bg-emerald-500/10 text-[var(--color-primary)] text-[10px] font-bold px-4 py-1.5 rounded-full border border-emerald-500/20">
-                                    ID: {teacher.id}
+                                    نمبر: {teacher.id}
                                 </span>
                             </div>
                         </div>
                         <div className="flex gap-3">
-                            <button className="flex items-center text-[10px] md:text-[12px] lg:text-[14px] gap-2 bg-[var(--color-primary)] text-[var(--color-text-main)] px-8 py-3 rounded-2xl font-bold">
-                                Edit <Edit size={20} />
+                            <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="flex items-center text-[10px] md:text-[12px] lg:text-[14px] gap-2 bg-[var(--color-primary)] text-[var(--color-text-main)] px-8 py-3 rounded-2xl font-bold">
+                                تبدیل کریں <Edit size={20} />
                             </button>
                             <button onClick={() => setShowPrintPreview(!showPrintPreview)} className="flex items-center text-[10px] gap-2 bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold">
-                                Print <Printer size={20} />
+                                پرنٹ <Printer size={20} />
                             </button>
                         </div>
                     </div>
@@ -114,24 +117,24 @@ export const EmployeeDetails = () => {
                             </div>
                         </DetailSection>
 
-                        <DetailSection id="job" title="تقریری تفصیلات" icon={Briefcase} isOpen={openSection === 'job'} onToggle={toggleSection}>
+                        <DetailSection id="job" title="تقرری تفصیلات" icon={Briefcase} isOpen={openSection === 'job'} onToggle={toggleSection}>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <InfoField label="مضمون" value={teacher.subject} />
-                                <InfoField label="Qualification" value={teacher.qualification} />
-                                <InfoField label="Status" value={teacher.status} />
+                                <InfoField label="تعلیمی قابلیت" value={teacher.qualification} />
+                                <InfoField label="حالت" value={statusLabel(teacher.status)} />
                             </div>
                         </DetailSection>
 
                         <DetailSection id="salary" title="تنخواہ" icon={Wallet} isOpen={openSection === 'salary'} onToggle={toggleSection}>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <InfoField label="بنیادی تنخواہ" value={`PKR ${teacher.basicSalary}`} dir="ltr" />
+                                <InfoField label="بنیادی تنخواہ" value={`روپے ${teacher.basicSalary}`} dir="rtl" />
                             </div>
                         </DetailSection>
 
-                        <DetailSection id="bank" title="ریکارڈ" icon={CreditCard} isOpen={openSection === 'bank'} onToggle={toggleSection}>
+                        <DetailSection id="record" title="ریکارڈ" icon={CreditCard} isOpen={openSection === 'record'} onToggle={toggleSection}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <InfoField label="Created At" value={teacher.createdAt ? new Date(teacher.createdAt).toLocaleString() : '---'} />
-                                <InfoField label="Updated At" value={teacher.updatedAt ? new Date(teacher.updatedAt).toLocaleString() : '---'} />
+                                <InfoField label="درج کرنے کی تاریخ" value={teacher.createdAt ? new Date(teacher.createdAt).toLocaleString('ur-PK') : '---'} />
+                                <InfoField label="آخری تبدیلی" value={teacher.updatedAt ? new Date(teacher.updatedAt).toLocaleString('ur-PK') : '---'} />
                             </div>
                         </DetailSection>
                     </div>

@@ -20,7 +20,7 @@ export const TeachersList = () => {
             const result = await getTeachers('page=1&limit=100');
             setTeachers(result.items || []);
         } catch (loadError) {
-            setError(loadError.message || 'Teachers load nahi ho sake.');
+            setError(loadError.message || 'اساتذہ لوڈ نہیں ہو سکے۔');
         }
     };
 
@@ -71,9 +71,10 @@ export const TeachersList = () => {
 
                     <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
                         <div className="relative w-full sm:w-64 group">
+                            <Search size={15} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
                             <InputField
                                 type="text"
-                                placeholder="نام یا مضمون تلاش کریں..."
+                                placeholder="نام، مضمون یا فون تلاش کریں..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -101,7 +102,7 @@ export const TeachersList = () => {
                                     <div>
                                         <h3 className="text-[16px] font-black text-[var(--color-text-main)]">{teacher.fullName}</h3>
                                         <span className="text-[11px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded-md">
-                                            ID: {teacher.id}
+                                            نمبر: {teacher.id}
                                         </span>
                                     </div>
                                 </div>
@@ -123,12 +124,12 @@ export const TeachersList = () => {
 
                             <div className="flex gap-2 pt-2">
                                 <button onClick={() => navigate(`/teachers/details/${teacher.id}`)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all">
-                                    <Eye size={16} className="ml-2" /> دیکھئے
+                                    <Eye size={16} className="ml-2" /> دیکھیں
                                 </button>
-                                <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all">
+                                <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all" aria-label="تبدیل کریں">
                                     <Edit2 size={16} className="ml-2" />
                                 </button>
-                                <button onClick={() => setDeleteTarget(teacher)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                                <button onClick={() => setDeleteTarget(teacher)} className="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all" aria-label="حذف کریں">
                                     <Trash2 size={16} className="ml-2" />
                                 </button>
                             </div>
@@ -136,7 +137,7 @@ export const TeachersList = () => {
                     ))
                 ) : (
                     <div className="bg-[var(--color-surface)] p-10 rounded-[2rem] text-center text-[var(--color-text-muted)] col-span-full">
-                        کوئی ڈیٹا نہیں ملا...
+                        کوئی ریکارڈ نہیں ملا۔
                     </div>
                 )}
             </div>
@@ -146,12 +147,12 @@ export const TeachersList = () => {
                     <table className="w-full text-right border-collapse">
                         <thead>
                             <tr className="border-b border-[var(--color-border)] bg-[var(--color-input)]/50">
-                                <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)]">آئی ڈی</th>
+                                <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)]">نمبر</th>
                                 <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)]">استاد کا نام</th>
                                 <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)]">مضمون</th>
                                 <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)]">رابطہ</th>
-                                <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)] text-center">سٹیٹس</th>
-                                <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)] text-center">ایکشن</th>
+                                <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)] text-center">حالت</th>
+                                <th className="p-5 text-[11px] font-black uppercase text-[var(--color-text-muted)] text-center">کارروائی</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--color-border)]">
@@ -175,9 +176,9 @@ export const TeachersList = () => {
                                     </td>
                                     <td className="p-5">
                                         <div className="flex items-center justify-center gap-2">
-                                            <button onClick={() => navigate(`/teachers/details/${teacher.id}`)} className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-sm"><Eye size={16} /></button>
-                                            <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="p-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all shadow-sm"><Edit2 size={16} /></button>
-                                            <button onClick={() => setDeleteTarget(teacher)} className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"><Trash2 size={16} /></button>
+                                            <button onClick={() => navigate(`/teachers/details/${teacher.id}`)} className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-sm" aria-label="دیکھیں"><Eye size={16} /></button>
+                                            <button onClick={() => navigate(`/HRManagement?teacherId=${teacher.id}`)} className="p-2.5 rounded-xl bg-[#00d094]/10 text-[#00d094] hover:bg-[#00d094] hover:text-white transition-all shadow-sm" aria-label="تبدیل کریں"><Edit2 size={16} /></button>
+                                            <button onClick={() => setDeleteTarget(teacher)} className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm" aria-label="حذف کریں"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -202,6 +203,7 @@ export const TeachersList = () => {
                                 type="button"
                                 onClick={() => !isDeleting && setDeleteTarget(null)}
                                 className="rounded-xl bg-[var(--color-bg)] p-2 text-[var(--color-text-muted)] transition-all hover:text-rose-500"
+                                aria-label="بند کریں"
                             >
                                 <X size={18} />
                             </button>
@@ -222,7 +224,7 @@ export const TeachersList = () => {
                                 disabled={isDeleting}
                                 className="rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white transition-all hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                {isDeleting ? 'حذف ہو رہی ہے...' : 'تصدیق کریں'}
+                                {isDeleting ? 'حذف ہو رہا ہے...' : 'تصدیق کریں'}
                             </button>
                         </div>
                     </div>
