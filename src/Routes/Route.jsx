@@ -12,6 +12,7 @@ import { SettingRoutes } from './SettingRoutes';
 import { FinanceRoutes } from './FinanceRoutes';
 import { HifzRoutes } from './HifzRoutes';
 import { ExamRoutes } from './ExamRoutes';
+import { StoreRoutes } from './StoreRoutes';
 import { AdminLogin } from '../Pages/Auth/AdminLogin';
 import { isAdminAuthenticated } from '../Constant/AdminAuth';
 import LandingPage from '../Pages/Landing/LandingPage';
@@ -59,6 +60,7 @@ export const AppRoutes = () => {
         {SettingRoutes}
         {TeacherRoutes}
         {ExamRoutes}
+        {StoreRoutes}
       </Route>
 
       <Route path="*" element={<Navigate to={isAdminAuthenticated() ? '/dashboard' : '/'} replace />} />

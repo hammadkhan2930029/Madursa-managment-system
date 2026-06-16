@@ -214,7 +214,7 @@ export const SalaryEntry = () => {
 
     return (
         <div className="min-h-screen p-3 md:p-6 font-urdu bg-[var(--color-bg)] text-[var(--color-text-main)]" dir="rtl">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-1 gap-6">
                 <div className="lg:col-span-1">
                     <div className="sticky top-6 p-5 md:p-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
                         <div className="flex items-center justify-between gap-3 mb-6">
@@ -345,7 +345,7 @@ export const SalaryEntry = () => {
                 </div>
 
                 <div className="lg:col-span-2">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6 bg-[var(--color-surface)] p-4 rounded-[1.2rem] border border-[var(--color-border)]">
                         <div>
                             <h2 className="text-2xl font-bold">حالیہ تنخواہ ریکارڈز</h2>
                             <p className="text-base text-[var(--color-text-muted)] mt-1">کل رقم: {formatAmount(totalPaid)}/-</p>

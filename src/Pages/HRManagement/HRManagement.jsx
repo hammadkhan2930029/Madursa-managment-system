@@ -203,8 +203,8 @@ export const HRManagement = () => {
         <div className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-3xl font-black md:text-4xl">{teacherId ? 'عملہ کی معلومات تبدیل کریں' : 'نیا عملہ / استاد شامل کریں'}</h1>
-              <p className="mt-3 text-sm font-bold text-[var(--color-text-muted)]">
+              <h1 className="text-2xl font-black md:text-4xl">{teacherId ? 'عملہ کی معلومات تبدیل کریں' : 'نیا عملہ / استاد شامل کریں'}</h1>
+              <p className="mt-4 text-md font-bold text-[var(--color-text-muted)]">
                 ایک ہی صفحہ پر معلومات درج کریں، صرف ٹیب تبدیل ہوں گے اور آخر میں ریکارڈ محفوظ ہو گا۔
               </p>
             </div>
@@ -212,7 +212,7 @@ export const HRManagement = () => {
               type="button"
               onClick={handleSubmit}
               disabled={isSaving}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-7 text-lg font-black text-white disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-7 text-md font-black text-white disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Save size={18} /> {isSaving ? 'محفوظ ہو رہا ہے...' : teacherId ? 'ریکارڈ اپڈیٹ کریں' : 'ریکارڈ محفوظ کریں'}
             </button>
@@ -229,7 +229,7 @@ export const HRManagement = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex min-w-44 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-lg font-black transition-all ${
+                  className={`inline-flex min-w-44 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-md font-black transition-all ${
                     isActive
                       ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-emerald-900/10'
                       : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text-main)]'
@@ -343,10 +343,10 @@ const PersonalStep = ({ formData, imagePreview, imageFile, onChange, onImageChan
         ]}
       />
       <InputField label="نام" required value={formData.fullName} onChange={(event) => onChange('fullName', event.target.value)} />
-      <InputField label="فون نمبر" value={formData.phone} onChange={(event) => onChange('phone', event.target.value)} />
+      <InputField label="فون نمبر" required value={formData.phone} onChange={(event) => onChange('phone', event.target.value)} />
       <InputField label="ای میل" type="email" value={formData.email} onChange={(event) => onChange('email', event.target.value)} />
-      <InputField label="شناختی کارڈ نمبر" value={formData.cnic} onChange={(event) => onChange('cnic', event.target.value)} />
-      <InputField label="پتہ" value={formData.address} onChange={(event) => onChange('address', event.target.value)} />
+      <InputField label="شناختی کارڈ نمبر" required value={formData.cnic} onChange={(event) => onChange('cnic', event.target.value)} />
+      <InputField label="پتہ" required value={formData.address} onChange={(event) => onChange('address', event.target.value)} />
     </div>
     <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[var(--color-primary)]/10 px-6 py-3 text-lg font-black text-[var(--color-primary)]">
       <Camera size={18} /> {imageFile || imagePreview ? 'تصویر تبدیل کریں' : 'تصویر اپ لوڈ کریں'}
@@ -399,7 +399,7 @@ const AccountStep = ({ formData, onChange }) => (
     <StepHeading title="تنخواہ اور اکاؤنٹ" description="بنیادی تنخواہ اور بینک اکاؤنٹ کی معلومات درج کریں۔" />
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <InputField label="بنیادی تنخواہ" required type="number" value={formData.basicSalary} onChange={(event) => onChange('basicSalary', event.target.value)} />
-      <InputField label="بینک کا نام" value={formData.bankName} onChange={(event) => onChange('bankName', event.target.value)} />
+      <InputField label="بینک کا نام"  value={formData.bankName} onChange={(event) => onChange('bankName', event.target.value)} />
       <InputField label="اکاؤنٹ ٹائٹل" value={formData.accountTitle} onChange={(event) => onChange('accountTitle', event.target.value)} />
       <InputField label="اکاؤنٹ نمبر" value={formData.accountNumber} onChange={(event) => onChange('accountNumber', event.target.value)} />
       <InputField label="IBAN" value={formData.iban} onChange={(event) => onChange('iban', event.target.value)} className="md:col-span-2" dir="ltr" />
@@ -429,8 +429,8 @@ const ServiceStep = ({ formData, onChange }) => (
 
 const StepHeading = ({ title, description }) => (
   <div>
-    <h2 className="text-3xl font-black text-[var(--color-text-main)] md:text-4xl">{title}</h2>
-    <p className="mt-2 text-sm font-bold text-[var(--color-text-muted)]">{description}</p>
+    <h2 className="text-2xl font-black text-[var(--color-text-main)] md:text-4xl">{title}</h2>
+    <p className="mt-2 text-md font-bold text-[var(--color-text-muted)]">{description}</p>
   </div>
 );
 
@@ -440,7 +440,7 @@ const TextAreaField = ({ label, className = '', ...props }) => (
     <textarea
       {...props}
       rows={4}
-      className="w-full resize-none rounded-2xl border border-transparent bg-[var(--color-input)] p-4 font-bold outline-none transition-all focus:border-[var(--color-primary)] focus:ring-4 focus:ring-emerald-500/10"
+      className="w-full resize-none rounded-2xl border border-transparent bg-[var(--color-input)] p-4  outline-none transition-all focus:border-[var(--color-primary)] focus:ring-4 focus:ring-emerald-500/10"
     />
   </div>
 );

@@ -330,6 +330,25 @@ export const SideBar = () => {
                 { id: 'exam_result_list', label: 'رزلٹ فہرست', path: '/exams/result-list' }
             ]
         },
+          {
+            id: 'store',
+            label: 'اسٹور',
+            icon: Store,
+            path: '/store',
+            subMenu: [
+                { id: 'store_dashboard', label: 'ڈیش بورڈ', path: '/store/dashboard' },
+                { id: 'store_items', label: 'اشیاء', path: '/store/items' },
+                { id: 'store_units', label: 'اکائیاں', path: '/store/units' },
+                { id: 'store_categories', label: 'کیٹیگریز', path: '/store/categories' },
+                { id: 'store_purchases', label: 'خریداری', path: '/store/purchases' },
+                { id: 'store_stock_issues', label: 'اسٹاک اجراء', path: '/store/stock-issues' },
+                { id: 'store_returns', label: 'واپسی', path: '/store/returns' },
+                { id: 'store_damaged_stock', label: 'خراب / گم شدہ اسٹاک', path: '/store/damaged-stock' },
+                { id: 'store_approvals', label: 'منظوریاں', path: '/store/approvals' },
+                { id: 'store_reports', label: 'رپورٹس', path: '/store/reports' },
+                { id: 'store_suppliers', label: 'سپلائرز', path: '/store/suppliers' },
+            ]
+        },
         {
             id: 'scholarship',
             label: 'وظیفہ',
@@ -342,12 +361,7 @@ export const SideBar = () => {
             icon: Library,
             path: '/books'
         },
-        {
-            id: 'store',
-            label: 'اسٹور',
-            icon: Store,
-            path: '/store'
-        },
+
     ];
     //--------------------------------------------------------------------
     const profileMenuItems = [
