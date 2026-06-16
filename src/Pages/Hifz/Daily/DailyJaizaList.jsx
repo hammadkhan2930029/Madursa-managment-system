@@ -4,9 +4,13 @@ import { deactivateDailyHifzEntry, getDailyHifzEntries, updateDailyHifzEntry } f
 import { getStudents } from '../../../Constant/StudentsApi';
 import { formatDateForInput, mapStudentsForHifz } from '../HifzUi';
 import { useNotifier } from '../../../Components/Notifications/useNotifier';
+import {
+    fetchMadrassaProfile,
+    getAdminSession,
+    MADRASSA_PROFILE_UPDATED_EVENT,
+} from '../../../Constant/AdminAuth';
 
 const registerMeta = {
-    campus: 'مدرسہ الہدیٰ',
     reportTitle: 'یومیہ رپورٹ',
 };
 
@@ -25,6 +29,7 @@ const filledRows = [
         sabak: 'پارہ 1',
         sabakMistake: '2',
         sabakAtkann: '1',
+        sabqiPara: 'پارہ 1',
         sabqiMistake: '1',
         sabqiAtkann: '0',
         manzilBeforeMistake: '0',
@@ -47,6 +52,7 @@ const filledRows = [
         sabak: 'پارہ 1',
         sabakMistake: '1',
         sabakAtkann: '1',
+        sabqiPara: 'پارہ 1',
         sabqiMistake: '0',
         sabqiAtkann: '0',
         manzilBeforeMistake: '1',
@@ -72,6 +78,7 @@ const emptyRows = Array.from({ length: 12 }, (_, index) => ({
     sabak: '',
     sabakMistake: '',
     sabakAtkann: '',
+    sabqiPara: '',
     sabqiMistake: '',
     sabqiAtkann: '',
     manzilBeforeMistake: '',
@@ -103,16 +110,30 @@ const mapDailyEntryToRow = (entry, selectedMonth, selectedYear) => ({
     date: formatDateForInput(entry.date),
     day: getDayName(entry.date),
     sabak: entry.sabq || '',
+    sabakRuku: entry.sabqRuku || '',
+    sabakAyatFrom: entry.sabqAyatFrom || '',
+    sabakAyatTo: entry.sabqAyatTo || '',
+    sabakTeacher: entry.sabqTeacherName || '',
     sabakMistake: toInputValue(entry.sabqMistake),
     sabakAtkann: toInputValue(entry.sabqAtkann),
+    sabqiPara: entry.sabaqi || '',
+    sabqiRuku: entry.sabaqiRuku || '',
+    sabqiAyatFrom: entry.sabaqiAyatFrom || '',
+    sabqiAyatTo: entry.sabaqiAyatTo || '',
     sabqiMistake: toInputValue(entry.sabaqiMistake),
     sabqiAtkann: toInputValue(entry.sabaqiAtkann),
     manzilBeforeMistake: toInputValue(entry.manzilBeforeMistake),
     manzilBeforeAtkann: toInputValue(entry.manzilBeforeAtkann),
-    manzilBeforeDetail: entry.manzilBeforeDetail || '',
+    manzilBeforePara: entry.manzilBeforePara || entry.manzilBeforeDetail || '',
+    manzilBeforeRuku: entry.manzilBeforeRuku || '',
+    manzilBeforeAyatFrom: entry.manzilBeforeAyatFrom || '',
+    manzilBeforeAyatTo: entry.manzilBeforeAyatTo || '',
     manzilAfterMistake: toInputValue(entry.manzilAfterMistake),
     manzilAfterAtkann: toInputValue(entry.manzilAfterAtkann),
-    manzilAfterDetail: entry.manzilAfterDetail || '',
+    manzilAfterPara: entry.manzilAfterPara || entry.manzilAfterDetail || '',
+    manzilAfterRuku: entry.manzilAfterRuku || '',
+    manzilAfterAyatFrom: entry.manzilAfterAyatFrom || '',
+    manzilAfterAyatTo: entry.manzilAfterAyatTo || '',
     lessonDetail: entry.lessonDetail || entry.remarks || '',
     count: toInputValue(entry.count),
     quality: entry.performanceStatus || '',
@@ -127,15 +148,31 @@ const buildUpdatePayload = (row) => ({
     studentId: Number(row.studentId),
     date: row.date,
     sabq: row.sabak || undefined,
+    sabqRuku: row.sabakRuku || undefined,
+    sabqAyatFrom: row.sabakAyatFrom || undefined,
+    sabqAyatTo: row.sabakAyatTo || undefined,
+    sabqTeacherName: row.sabakTeacher || undefined,
     sabqMistake: toOptionalNumber(row.sabakMistake),
     sabqAtkann: toOptionalNumber(row.sabakAtkann),
+    sabaqi: row.sabqiPara || undefined,
+    sabaqiRuku: row.sabqiRuku || undefined,
+    sabaqiAyatFrom: row.sabqiAyatFrom || undefined,
+    sabaqiAyatTo: row.sabqiAyatTo || undefined,
     sabaqiMistake: toOptionalNumber(row.sabqiMistake),
     sabaqiAtkann: toOptionalNumber(row.sabqiAtkann),
-    manzil: [row.manzilBeforeDetail, row.manzilAfterDetail].filter(Boolean).join(' / ') || undefined,
-    manzilBeforeDetail: row.manzilBeforeDetail || undefined,
+    manzil: [row.manzilBeforePara, row.manzilAfterPara].filter(Boolean).join(' / ') || undefined,
+    manzilBeforeDetail: [row.manzilBeforePara, row.manzilBeforeRuku, row.manzilBeforeAyatFrom && row.manzilBeforeAyatTo ? `${row.manzilBeforeAyatFrom}-${row.manzilBeforeAyatTo}` : ''].filter(Boolean).join(' | ') || undefined,
+    manzilBeforePara: row.manzilBeforePara || undefined,
+    manzilBeforeRuku: row.manzilBeforeRuku || undefined,
+    manzilBeforeAyatFrom: row.manzilBeforeAyatFrom || undefined,
+    manzilBeforeAyatTo: row.manzilBeforeAyatTo || undefined,
     manzilBeforeMistake: toOptionalNumber(row.manzilBeforeMistake),
     manzilBeforeAtkann: toOptionalNumber(row.manzilBeforeAtkann),
-    manzilAfterDetail: row.manzilAfterDetail || undefined,
+    manzilAfterDetail: [row.manzilAfterPara, row.manzilAfterRuku, row.manzilAfterAyatFrom && row.manzilAfterAyatTo ? `${row.manzilAfterAyatFrom}-${row.manzilAfterAyatTo}` : ''].filter(Boolean).join(' | ') || undefined,
+    manzilAfterPara: row.manzilAfterPara || undefined,
+    manzilAfterRuku: row.manzilAfterRuku || undefined,
+    manzilAfterAyatFrom: row.manzilAfterAyatFrom || undefined,
+    manzilAfterAyatTo: row.manzilAfterAyatTo || undefined,
     manzilAfterMistake: toOptionalNumber(row.manzilAfterMistake),
     manzilAfterAtkann: toOptionalNumber(row.manzilAfterAtkann),
     lessonDetail: row.lessonDetail || undefined,
@@ -147,6 +184,8 @@ const buildUpdatePayload = (row) => ({
 
 export const DailyJaizaList = () => {
     const notify = useNotifier();
+    const [madrassaProfile, setMadrassaProfile] = useState(null);
+    const [isProfileLoading, setIsProfileLoading] = useState(true);
     const [students, setStudents] = useState([]);
     const [savedRows, setSavedRows] = useState([]);
     const [editingRowId, setEditingRowId] = useState('');
@@ -159,6 +198,43 @@ export const DailyJaizaList = () => {
     const [showStudentResults, setShowStudentResults] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const madrassaName = madrassaProfile?.name?.trim() || '';
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const syncMadrassaProfile = async () => {
+            try {
+                const profile = await fetchMadrassaProfile();
+                if (isMounted && profile) {
+                    setMadrassaProfile(profile);
+                }
+            } catch {
+                if (isMounted) {
+                    setMadrassaProfile(getAdminSession()?.madrassaProfile || null);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsProfileLoading(false);
+                }
+            }
+        };
+
+        const handleProfileUpdated = (event) => {
+            if (isMounted) {
+                setMadrassaProfile(event.detail || getAdminSession()?.madrassaProfile || null);
+                setIsProfileLoading(false);
+            }
+        };
+
+        window.addEventListener(MADRASSA_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+        syncMadrassaProfile();
+
+        return () => {
+            isMounted = false;
+            window.removeEventListener(MADRASSA_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+        };
+    }, []);
 
     const loadDailyEntries = useCallback(async (studentId = selectedStudentId) => {
         try {
@@ -325,7 +401,9 @@ export const DailyJaizaList = () => {
                                 <BookOpen size={28} />
                             </div>
                             <div className="space-y-1">
-                                <h1 className="text-2xl md:text-3xl font-black">{registerMeta.campus}</h1>
+                                <h1 className="min-h-[2.5rem] text-2xl font-black md:text-3xl">
+                                    {isProfileLoading ? '' : madrassaName}
+                                </h1>
                                 <p className="text-sm font-bold text-[var(--color-text-muted)]">{registerMeta.reportTitle}</p>
                             </div>
                         </div>
@@ -403,7 +481,7 @@ export const DailyJaizaList = () => {
                         </div>
 
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                            استاد: ____________
+                            استاد: {visibleRows[0]?.sabakTeacher || '____________'}
                         </div>
                         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
                             کلاس / شعبہ: {selectedStudent ? `${selectedStudent.className} (${selectedStudent.sectionName})` : '____________'}
@@ -416,36 +494,36 @@ export const DailyJaizaList = () => {
 
                 <div className="rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:p-5 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1750px] border-collapse text-center text-sm">
+                        <table className="w-full min-w-[3400px] border-collapse text-center text-sm">
                             <thead>
                                 <tr className="bg-[var(--color-bg)]">
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[150px]">طالب علم</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">تاریخ</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">دن</th>
-                                    <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">سبق</th>
-                                    <th colSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">سبقی</th>
-                                    <th colSpan="3" className="border border-[var(--color-border)] px-2 py-3 font-black">منزل قبل الظہر</th>
-                                    <th colSpan="3" className="border border-[var(--color-border)] px-2 py-3 font-black">منزل بعد الظہر</th>
+                                    <th colSpan="7" className="border border-[var(--color-border)] px-2 py-3 font-black">سبق</th>
+                                    <th colSpan="6" className="border border-[var(--color-border)] px-2 py-3 font-black">سبقی</th>
+                                    <th colSpan="6" className="border border-[var(--color-border)] px-2 py-3 font-black">منزل قبل الظہر</th>
+                                    <th colSpan="6" className="border border-[var(--color-border)] px-2 py-3 font-black">منزل بعد الظہر</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">پڑھی کی تفصیل</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">تعداد</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black">کیفیت</th>
                                     <th rowSpan="2" className="border border-[var(--color-border)] px-2 py-3 font-black min-w-[150px]">ایکشن</th>
                                 </tr>
                                 <tr className="bg-[var(--color-bg)] text-xs">
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">غلطی</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">اٹکن</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">غلطی</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">اٹکن</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">تفصیل</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">غلطی</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">اٹکن</th>
-                                    <th className="border border-[var(--color-border)] px-2 py-2 font-black">تفصیل</th>
+                                    {['پارہ', 'رکوع', 'آیت سے', 'آیت تک', 'غلطی', 'اٹکن', 'استاد'].map((label) => (
+                                        <th key={`sabaq-${label}`} className="border border-[var(--color-border)] px-2 py-2 font-black">{label}</th>
+                                    ))}
+                                    {['سبقی', 'منزل-قبل', 'منزل-بعد'].flatMap((section) => (
+                                        ['پارہ', 'رکوع', 'آیت سے', 'آیت تک', 'غلطی', 'اٹکن'].map((label) => (
+                                            <th key={`${section}-${label}`} className="border border-[var(--color-border)] px-2 py-2 font-black">{label}</th>
+                                        ))
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 {isLoading && (
                                     <tr>
-                                        <td colSpan="16" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
+                                        <td colSpan="32" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
                                             یومیہ جائزے لوڈ ہو رہے ہیں...
                                         </td>
                                     </tr>
@@ -462,14 +540,30 @@ export const DailyJaizaList = () => {
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[95px]">{renderCell(row, 'date')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[80px]">{renderCell(row, 'day')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[100px]">{renderCell(row, 'sabak')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabakRuku')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabakAyatFrom')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabakAyatTo')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabakMistake')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabakAtkann')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[120px]">{renderCell(row, 'sabakTeacher', true)}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[110px]">{renderCell(row, 'sabqiPara', true)}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabqiRuku')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabqiAyatFrom')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabqiAyatTo')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabqiMistake')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'sabqiAtkann')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[110px]">{renderCell(row, 'manzilBeforePara', true)}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilBeforeRuku')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilBeforeAyatFrom')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilBeforeAyatTo')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilBeforeMistake')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilBeforeAtkann')}</td>
-                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[110px]">{renderCell(row, 'manzilBeforeDetail', true)}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[110px]">{renderCell(row, 'manzilAfterPara', true)}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilAfterRuku')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilAfterAyatFrom')}</td>
+                                            <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilAfterAyatTo')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilAfterMistake')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'manzilAfterAtkann')}</td>
-                                            <td className="border border-[var(--color-border)] px-2 py-3 min-w-[110px]">{renderCell(row, 'manzilAfterDetail', true)}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[180px]">{renderCell(row, 'lessonDetail', true)}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3">{renderCell(row, 'count')}</td>
                                             <td className="border border-[var(--color-border)] px-2 py-3 min-w-[100px]">{renderCell(row, 'quality', true)}</td>
@@ -518,7 +612,7 @@ export const DailyJaizaList = () => {
                                 })}
                                 {!isLoading && visibleRows.length === 0 && (
                                     <tr>
-                                        <td colSpan="16" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
+                                        <td colSpan="32" className="border border-[var(--color-border)] px-4 py-10 text-sm font-bold text-[var(--color-text-muted)]">
                                             اس طالب علم / مہینہ / سال کے مطابق کوئی یومیہ ریکارڈ نہیں ملا۔
                                         </td>
                                     </tr>

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Save } from 'lucide-react';
+import { CalendarRange, CheckCircle2, Edit2, Search, Save } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { SelectField, DateField } from '../../../Components/HR/FormElements';
 import { getClasses, getSections, getSessions } from '../../../Constant/AcademicSetupApi';
 import { getStudents } from '../../../Constant/StudentsApi';
@@ -35,6 +36,7 @@ const getStatusColor = (status) => {
 };
 
 export const AttendancePage = () => {
+    const navigate = useNavigate();
     const today = new Date().toISOString().split('T')[0];
     const [searchFilters, setSearchFilters] = useState({
         sessionId: '',
@@ -46,6 +48,9 @@ export const AttendancePage = () => {
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
+    const [savedStudents, setSavedStudents] = useState([]);
+    const [isAttendanceSaved, setIsAttendanceSaved] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [isSearched, setIsSearched] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -94,6 +99,11 @@ export const AttendancePage = () => {
     const handleFilterChange = (key, value) => {
         setError('');
         setSuccessMessage('');
+        setStudents([]);
+        setSavedStudents([]);
+        setIsAttendanceSaved(false);
+        setIsEditMode(false);
+        setIsSearched(false);
 
         setSearchFilters((prev) => {
             const next = { ...prev, [key]: value };
@@ -143,7 +153,10 @@ export const AttendancePage = () => {
             ]);
 
             const attendanceMap = new Map(
-                (attendanceResult.items || []).map((entry) => [String(entry.studentId), entry]),
+                (attendanceResult.items || []).map((entry) => [
+                    String(entry.studentId ?? entry.student?.id),
+                    entry,
+                ]),
             );
 
             const rows = (studentResult.items || [])
@@ -165,11 +178,15 @@ export const AttendancePage = () => {
                         branchId: activeAssignment.branchId || Number(selectedClass.branchId),
                         classId: activeAssignment.classId || Number(searchFilters.classId),
                         sectionId: activeAssignment.sectionId || Number(searchFilters.sectionId),
+                        attendanceId: existingAttendance?.id || null,
                     };
                 })
                 .filter(Boolean);
 
             setStudents(rows);
+            setSavedStudents(rows.map((student) => ({ ...student })));
+            setIsAttendanceSaved(rows.length > 0 && rows.every((student) => Boolean(student.attendanceId)));
+            setIsEditMode(false);
             setIsSearched(true);
 
             if (!rows.length) {
@@ -193,7 +210,7 @@ export const AttendancePage = () => {
         setSuccessMessage('');
 
         try {
-            await Promise.all(
+            const savedEntries = await Promise.all(
                 students.map((student) =>
                     saveStudentAttendance({
                         studentId: Number(student.id),
@@ -207,6 +224,14 @@ export const AttendancePage = () => {
                 ),
             );
 
+            const nextStudents = students.map((student, index) => ({
+                ...student,
+                attendanceId: savedEntries[index]?.id || student.attendanceId || null,
+            }));
+            setStudents(nextStudents);
+            setSavedStudents(nextStudents.map((student) => ({ ...student })));
+            setIsAttendanceSaved(true);
+            setIsEditMode(false);
             setSuccessMessage('طلباء کی حاضری کامیابی سے محفوظ ہو گئی۔');
         } catch (saveError) {
             setError(saveError.message || 'حاضری محفوظ نہیں ہو سکی۔');
@@ -226,6 +251,20 @@ export const AttendancePage = () => {
     const markAllStudents = (status) => {
         setStudents((prev) => prev.map((student) => ({ ...student, status })));
     };
+
+    const hasAttendanceChanges = useMemo(() => {
+        if (students.length !== savedStudents.length) return true;
+
+        return students.some((student, index) => (
+            student.status !== savedStudents[index]?.status ||
+            student.remarks !== savedStudents[index]?.remarks
+        ));
+    }, [savedStudents, students]);
+
+    const canEditAttendance = !isAttendanceSaved || isEditMode;
+    const canSaveAttendance = students.length > 0 && (
+        !isAttendanceSaved || (isEditMode && hasAttendanceChanges)
+    );
 
     const counts = useMemo(
         () => ({
@@ -251,6 +290,9 @@ export const AttendancePage = () => {
                 <div>
                     <h2 className="text-4xl font-black text-[var(--color-text)]">روزانہ حاضری</h2>
                     <p className="text-xs text-[var(--color-text-muted)] font-bold mt-4">طلباء کی روزانہ حاضری</p>
+                    <p className="mt-2 text-xs font-bold text-[var(--color-primary)]">
+                        پچھلی حاضری دیکھنے کے لیے تاریخ، سیشن، کلاس اور سیکشن منتخب کر کے حاضری لسٹ دکھائیں۔
+                    </p>
                 </div>
 
                 <div className="w-full md:w-64 bg-[var(--color-input)] p-1 rounded-2xl border border-[var(--color-border)]">
@@ -301,16 +343,32 @@ export const AttendancePage = () => {
                 <div className="bg-[var(--color-surface)] rounded-[2.5rem] shadow-sm border border-[var(--color-border)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-input)]/50">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase">کل طلباء: {students.length}</p>
+                            <div>
+                                <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase">کل طلباء: {students.length}</p>
+                                <p className="mt-1 text-xs font-bold text-[var(--color-text-main)]">
+                                    تاریخ: <span className="font-sans">{searchFilters.date}</span>
+                                </p>
+                            </div>
                             {students.length ? (
                                 <div className="grid grid-cols-2 gap-2 md:flex">
                                     <ExportExcelButton rows={students} columns={exportColumns} fileName={`student-attendance-${searchFilters.date}`} className="col-span-2 w-full md:w-auto" />
+                                    {isAttendanceSaved && !isEditMode ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsEditMode(true)}
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-[10px] font-black text-blue-400 md:col-auto"
+                                        >
+                                            <Edit2 size={15} />
+                                            درستگی کریں
+                                        </button>
+                                    ) : null}
                                     {STATUS_OPTIONS.map((status) => (
                                         <button
                                             key={status.value}
                                             type="button"
                                             onClick={() => markAllStudents(status.value)}
-                                            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[10px] font-black text-[var(--color-text-main)] transition-colors hover:bg-[var(--color-primary)]/10"
+                                            disabled={!canEditAttendance}
+                                            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[10px] font-black text-[var(--color-text-main)] transition-colors hover:bg-[var(--color-primary)]/10 disabled:cursor-not-allowed disabled:opacity-40"
                                         >
                                             سب {status.label}
                                         </button>
@@ -322,7 +380,7 @@ export const AttendancePage = () => {
 
                     <div className="divide-y divide-[var(--color-border)]">
                         {students.map((student) => (
-                            <div key={student.id} className="p-4 grid grid-cols-1 gap-3 hover:bg-[var(--color-input)]/30 transition-colors lg:grid-cols-[1fr_160px_260px] lg:items-center">
+                            <div key={student.id} className="p-4 grid grid-cols-1 gap-3 hover:bg-[var(--color-input)]/30 transition-colors lg:grid-cols-[1fr_160px_260px_auto] lg:items-center">
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] font-black text-xs border border-[var(--color-primary)]/20 shrink-0">
                                         {student.rollNo}
@@ -337,7 +395,8 @@ export const AttendancePage = () => {
                                     <select
                                         value={student.status}
                                         onChange={(e) => updateStatus(student.id, e.target.value)}
-                                        className={`w-full p-2 rounded-xl border-2 text-[10px] font-black outline-none transition-all cursor-pointer ${getStatusColor(student.status)}`}
+                                        disabled={!canEditAttendance}
+                                        className={`w-full p-2 rounded-xl border-2 text-[10px] font-black outline-none transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 ${getStatusColor(student.status)}`}
                                     >
                                         {STATUS_OPTIONS.map((status) => (
                                             <option key={status.value} value={status.value}>
@@ -351,9 +410,19 @@ export const AttendancePage = () => {
                                     type="text"
                                     value={student.remarks}
                                     onChange={(event) => updateRemarks(student.id, event.target.value)}
+                                    disabled={!canEditAttendance}
                                     placeholder="Remarks"
-                                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-xs font-bold text-[var(--color-text-main)] outline-none transition-colors focus:border-[var(--color-primary)]"
+                                    className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-xs font-bold text-[var(--color-text-main)] outline-none transition-colors focus:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-70"
                                 />
+
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(`/students/attendance-history/${student.id}`)}
+                                    className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-4 text-xs font-black text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
+                                >
+                                    <CalendarRange size={17} />
+                                    حاضری ریکارڈ
+                                </button>
                             </div>
                         ))}
                         {!students.length ? (
@@ -364,6 +433,12 @@ export const AttendancePage = () => {
                     </div>
 
                     <div className="p-6 bg-[var(--color-input)] border-t border-[var(--color-border)] space-y-4">
+                        {isAttendanceSaved ? (
+                            <div className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-500">
+                                <CheckCircle2 size={18} />
+                                اس تاریخ کی حاضری محفوظ ہے۔
+                            </div>
+                        ) : null}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div className="text-center">
                                 <p className="text-sm font-bold text-[var(--color-text-muted)] mb-1">حاضر</p>
@@ -385,10 +460,17 @@ export const AttendancePage = () => {
 
                         <button
                             onClick={handleSave}
-                            disabled={isSaving || !students.length}
+                            disabled={isSaving || !canSaveAttendance}
                             className="w-full flex items-center justify-center gap-2 bg-[var(--color-primary)] text-white py-4 rounded-2xl font-black text-sm hover:opacity-95 shadow-xl shadow-[var(--color-primary)]/30 transition-all disabled:opacity-60"
                         >
-                            <Save size={18} /> {isSaving ? 'محفوظ ہو رہا ہے...' : 'ڈیٹا محفوظ کریں'}
+                            <Save size={18} />
+                            {isSaving
+                                ? 'محفوظ ہو رہا ہے...'
+                                : isAttendanceSaved && !isEditMode
+                                    ? 'حاضری محفوظ ہے'
+                                    : isAttendanceSaved && !hasAttendanceChanges
+                                        ? 'کوئی تبدیلی نہیں'
+                                        : 'حاضری محفوظ کریں'}
                         </button>
                     </div>
                 </div>

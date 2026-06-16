@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Edit2, Eye, GraduationCap, Phone, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
+import { AlertTriangle, CalendarRange, Edit2, Eye, GraduationCap, Phone, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { deleteStudent, getStudents } from '../../../Constant/StudentsApi';
 import { useNotificationBridge } from '../../../Components/Notifications/useNotificationBridge';
@@ -326,6 +326,9 @@ export const StudentList = () => {
                                 <ActionIcon label="دیکھیں" onClick={() => navigate(`/students/profile/${student.id}`)}>
                                     <Eye size={18} />
                                 </ActionIcon>
+                                <ActionIcon label="حاضری ریکارڈ" tone="blue" onClick={() => navigate(`/students/attendance-history/${student.id}`)}>
+                                    <CalendarRange size={18} />
+                                </ActionIcon>
                                 <ActionIcon label="تبدیل کریں" tone="blue" onClick={() => navigate(`/students/admission?studentId=${student.id}`)}>
                                     <Edit2 size={18} />
                                 </ActionIcon>
@@ -373,6 +376,9 @@ export const StudentList = () => {
                                     <div className="flex justify-center gap-2">
                                         <ActionIcon label="دیکھیں" onClick={() => navigate(`/students/profile/${student.id}`)}>
                                             <Eye size={16} />
+                                        </ActionIcon>
+                                        <ActionIcon label="حاضری ریکارڈ" tone="blue" onClick={() => navigate(`/students/attendance-history/${student.id}`)}>
+                                            <CalendarRange size={16} />
                                         </ActionIcon>
                                         <ActionIcon label="تبدیل کریں" tone="blue" onClick={() => navigate(`/students/admission?studentId=${student.id}`)}>
                                             <Edit2 size={16} />

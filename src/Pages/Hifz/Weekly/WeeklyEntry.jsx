@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, CalendarDays, Plus, Save, UserRound } from 'lucide-react';
+import { ArrowRight, BookOpen, Plus, Save, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ThemedDatePicker } from '../../../Components/DatePicker/ThemedDatePicker';
 import { getClasses, getSections } from '../../../Constant/AcademicSetupApi';
 import { createWeeklyHifzEntry } from '../../../Constant/HifzApi';
 import { getStudents } from '../../../Constant/StudentsApi';
@@ -29,11 +30,18 @@ const createWeeklyRow = () => ({
 const qualityOptions = ['ممتاز','ممتاز مع شرف', 'بہتر', 'مناسب', , 'کمزور'];
 
 const initialFormState = {
-    week: '',
+    weekStartDate: '',
+    weekEndDate: '',
     className: '',
     section: '',
     teacher: '',
     rows: [createWeeklyRow()],
+};
+
+const formatDateForDisplay = (value) => {
+    if (!value) return '';
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('ur-PK');
 };
 
 const rowHasContent = (row) => {
@@ -183,28 +191,13 @@ export const WeeklyJaizaForm = () => {
         return Number(value);
     };
 
-    const getWeekDates = () => {
-        const parsedDate = new Date(formData.week);
-        const start = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        end.setHours(0, 0, 0, 0);
-
-        return {
-            weekStartDate: start.toISOString().slice(0, 10),
-            weekEndDate: end.toISOString().slice(0, 10),
-        };
-    };
-
     const buildPayload = (row) => {
         const student = studentOptions.find((item) => item.id === row.studentId || item.label === row.studentName);
-        const { weekStartDate, weekEndDate } = getWeekDates();
+        const { weekStartDate, weekEndDate } = formData;
 
         return {
             studentId: Number(student?.id || row.studentId),
-            weekLabel: formData.week,
+            weekLabel: `${formatDateForDisplay(weekStartDate)} تا ${formatDateForDisplay(weekEndDate)}`,
             className: formData.className || undefined,
             sectionName: formData.section || undefined,
             teacherName: formData.teacher || undefined,
@@ -230,8 +223,13 @@ export const WeeklyJaizaForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.week || !formData.className || !formData.section) {
-            notify.error('براہ کرم ہفتہ، کلاس اور سیکشن کی معلومات پہلے مکمل کریں۔');
+        if (!formData.weekStartDate || !formData.weekEndDate || !formData.className || !formData.section) {
+            notify.error('براہ کرم شروع کی تاریخ، اختتامی تاریخ، کلاس اور سیکشن کی معلومات پہلے مکمل کریں۔');
+            return;
+        }
+
+        if (formData.weekEndDate < formData.weekStartDate) {
+            notify.error('اختتامی تاریخ شروع کی تاریخ سے پہلے نہیں ہو سکتی۔');
             return;
         }
 
@@ -295,21 +293,29 @@ export const WeeklyJaizaForm = () => {
                         </button>
                     </div>
 
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-[var(--color-text-muted)]">ہفتہ / تاریخ<span className="text-red-500"> *</span></label>
-                            <div className="relative">
-                                <CalendarDays className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-primary)]" size={18} />
-                                <input
-                                    required
-                                    type="text"
-                                    value={formData.week}
-                                    onChange={(e) => handleFormChange('week', e.target.value)}
-                                    placeholder="1 تا 7 شعبان"
-                                    dir="rtl"
-                                    className="w-full h-14 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] pr-14 pl-5 text-right text-sm leading-7 font-bold outline-none focus:border-[var(--color-primary)]"
-                                />
-                            </div>
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+                        <div>
+                            <ThemedDatePicker
+                                required
+                                label="کب سے"
+                                value={formData.weekStartDate}
+                                onChange={(value) => handleFormChange('weekStartDate', value)}
+                                max={formData.weekEndDate || undefined}
+                                placeholder="شروع کی تاریخ منتخب کریں"
+                                size="sm"
+                            />
+                        </div>
+
+                        <div>
+                            <ThemedDatePicker
+                                required
+                                label="کب تک"
+                                value={formData.weekEndDate}
+                                onChange={(value) => handleFormChange('weekEndDate', value)}
+                                min={formData.weekStartDate || undefined}
+                                placeholder="اختتامی تاریخ منتخب کریں"
+                                size="sm"
+                            />
                         </div>
 
                         <div className="space-y-2">

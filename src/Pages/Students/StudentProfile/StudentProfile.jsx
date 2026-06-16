@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, CalendarDays, GraduationCap, Phone, ShieldCheck, User, Users } from 'lucide-react';
+import { ArrowRight, CalendarDays, CalendarRange, GraduationCap, Phone, ShieldCheck, User, Users } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getStudentById } from '../../../Constant/StudentsApi';
 import { getApiAssetUrl } from '../../../Constant/AdminAuth';
@@ -92,9 +92,14 @@ export const StudentProfile = () => {
                                 <p className="text-sm font-bold text-[var(--color-text-muted)] mt-4">ولدیت: {student.fatherName}</p>
                             </div>
 
-                            <button onClick={() => navigate(-1)} className="self-center md:self-start flex items-center gap-2 px-5 py-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-main)] font-bold">
-                                <ArrowRight size={18} /> واپس
-                            </button>
+                            <div className="flex flex-wrap items-center justify-center gap-3 md:justify-end">
+                                <button onClick={() => navigate(`/students/attendance-history/${student.id}`)} className="flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 font-bold text-white">
+                                    <CalendarRange size={18} /> حاضری ریکارڈ
+                                </button>
+                                <button onClick={() => navigate(-1)} className="flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-3 font-bold text-[var(--color-text-main)]">
+                                    <ArrowRight size={18} /> واپس
+                                </button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-2">

@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import {
     UserPlus, Users, Calendar, Wallet, UserCheck,
-    TrendingUp, BookOpen
+    TrendingUp, BookOpen, ChevronLeft, Settings2, X, Check
 } from 'lucide-react';
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { getStudents } from '../../Constant/StudentsApi';
+import { getParents, getStudents } from '../../Constant/StudentsApi';
 import { getTeachers } from '../../Constant/TeachersApi';
 import { getFinancialRecords } from '../../Constant/FinancialApi';
 import { getStudentAttendance } from '../../Constant/AttendanceApi';
+import { getExamSchedules } from '../../Constant/ExamSchedulesApi';
+import { getExamResults } from '../../Constant/ExamResultsApi';
+import {
+    getDailyHifzEntries,
+    getMonthlyHifzEntries,
+    getSiparaHifzEntries,
+    getWeeklyHifzEntries,
+} from '../../Constant/HifzApi';
+import { getAdminSession } from '../../Constant/AdminAuth';
 
 //--------------------------------------------------------------------------
 
@@ -27,11 +36,38 @@ const fallbackPieData = [
     { name: 'موصول', value: 75, color: '#00d094' },
     { name: 'باقی', value: 25, color: 'var(--color-bg)' },
 ];
-const fallbackRecentActivities = [
-    { title: 'احمد رضا نے فیس جمع کروائی', amount: 'PKR 4,500', time: '2 منٹ پہلے', color: 'bg-blue-500' },
-    { title: 'نیا طالب علم رجسٹر ہوا', amount: 'داخلہ مکمل', time: '15 منٹ پہلے', color: 'bg-emerald-500' },
+
+const quickActionCatalog = [
+    { id: 'student-admission', label: 'نیا طالب علم', icon: UserPlus, bg: 'bg-blue-600 shadow-blue-600/30', path: '/students/admission' },
+    { id: 'parents', label: 'والدین', icon: Users, bg: 'bg-emerald-500 shadow-emerald-500/30', path: '/students/parents' },
+    { id: 'student-attendance', label: 'حاضری لگائیں', icon: Calendar, bg: 'bg-indigo-500 shadow-indigo-500/30', path: '/students/attendance' },
+    { id: 'fund-collection', label: 'فنڈ جمع کریں', icon: Wallet, bg: 'bg-orange-500 shadow-orange-500/30', path: '/finance/income/fund-collection' },
+    { id: 'add-teacher', label: 'نیا استاد شامل کریں', icon: UserCheck, bg: 'bg-teal-600 shadow-teal-600/30', path: '/HRManagement' },
+    { id: 'teacher-list', label: 'اساتذہ کی فہرست', icon: Users, bg: 'bg-cyan-600 shadow-cyan-600/30', path: '/teachers/list' },
+    { id: 'exam-schedule', label: 'امتحانی شیڈول', icon: BookOpen, bg: 'bg-violet-600 shadow-violet-600/30', path: '/exams/schedule' },
+    { id: 'daily-hifz', label: 'یومیہ جائزہ', icon: BookOpen, bg: 'bg-lime-600 shadow-lime-600/30', path: '/hifz/daily/entry' },
+    { id: 'student-fees', label: 'فیس جنریشن', icon: Wallet, bg: 'bg-rose-600 shadow-rose-600/30', path: '/students/fees' },
+    { id: 'student-schedule', label: 'نظام الاوقات', icon: Calendar, bg: 'bg-sky-600 shadow-sky-600/30', path: '/students/schedule' },
 ];
 
+const defaultQuickActionIds = ['student-admission', 'parents', 'student-attendance', 'fund-collection'];
+
+const getQuickActionStorageKey = () => {
+    const adminId = getAdminSession()?.admin?.id || 'default';
+    return `dashboard-quick-actions:${adminId}`;
+};
+
+const getInitialQuickActionIds = () => {
+    try {
+        const savedIds = JSON.parse(localStorage.getItem(getQuickActionStorageKey()) || 'null');
+        if (!Array.isArray(savedIds)) return defaultQuickActionIds;
+
+        const validIds = savedIds.filter((id) => quickActionCatalog.some((action) => action.id === id));
+        return [...new Set(validIds)];
+    } catch {
+        return defaultQuickActionIds;
+    }
+};
 const getTotalItems = (result) => Number(result?.meta?.totalItems ?? result?.meta?.total ?? result?.items?.length ?? 0);
 
 const formatCount = (value, fallback) => {
@@ -81,7 +117,23 @@ const getRelativeTime = (value) => {
     return `${diffDays} دن پہلے`;
 };
 
-const getRecordDate = (record) => new Date(record.createdAt || record.updatedAt || record.date || record.transactionDate || 0).getTime();
+const getRecordDate = (record) => new Date(record.updatedAt || record.createdAt || record.date || record.transactionDate || 0).getTime();
+const getActivityDate = (record) => record.updatedAt || record.createdAt || record.date || record.transactionDate;
+const wasUpdated = (record) => {
+    if (!record?.createdAt || !record?.updatedAt) return false;
+    return new Date(record.updatedAt).getTime() - new Date(record.createdAt).getTime() > 1000;
+};
+const getItems = (result) => result?.items || [];
+
+const createActivity = ({ record, title, amount, color, path }) => ({
+    id: `${path}-${record.id ?? getRecordDate(record)}`,
+    title,
+    amount,
+    time: getRelativeTime(getActivityDate(record)),
+    color,
+    path,
+    sortDate: getRecordDate(record),
+});
 
 const getStatusLabel = (status) => {
     if (status === 'loading') return 'لوڈ ہو رہا ہے';
@@ -142,6 +194,8 @@ const StatCard =
 
 export const Dashboard = () => {
     const navigate = useNavigate();
+    const [quickActionIds, setQuickActionIds] = useState(getInitialQuickActionIds);
+    const [isQuickActionSettingsOpen, setIsQuickActionSettingsOpen] = useState(false);
     const [topStats, setTopStats] = useState({
         students: '350',
         teachers: '15',
@@ -154,7 +208,7 @@ export const Dashboard = () => {
         attendanceData: fallbackLineData,
         attendancePercent: 91,
     });
-    const [recentActivities, setRecentActivities] = useState(fallbackRecentActivities);
+    const [recentActivities, setRecentActivities] = useState([]);
     const [dashboardStatus, setDashboardStatus] = useState({
         stats: 'loading',
         charts: 'loading',
@@ -164,6 +218,22 @@ export const Dashboard = () => {
     useEffect(() => {
         window.scrollTo(0, 0)
     }, [])
+
+    useEffect(() => {
+        localStorage.setItem(getQuickActionStorageKey(), JSON.stringify(quickActionIds));
+    }, [quickActionIds]);
+
+    const selectedQuickActions = quickActionIds
+        .map((id) => quickActionCatalog.find((action) => action.id === id))
+        .filter(Boolean);
+
+    const toggleQuickAction = (actionId) => {
+        setQuickActionIds((current) => (
+            current.includes(actionId)
+                ? current.filter((id) => id !== actionId)
+                : [...current, actionId]
+        ));
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -270,48 +340,160 @@ export const Dashboard = () => {
 
         const loadRecentActivities = async () => {
             try {
-                const [studentsResult, financeResult] = await Promise.allSettled([
-                    getStudents('page=1&limit=5'),
-                    getFinancialRecords('page=1&limit=5'),
+                const [
+                    studentsResult,
+                    teachersResult,
+                    parentsResult,
+                    financeResult,
+                    attendanceResult,
+                    examSchedulesResult,
+                    examResultsResult,
+                    dailyHifzResult,
+                    weeklyHifzResult,
+                    monthlyHifzResult,
+                    siparaHifzResult,
+                ] = await Promise.allSettled([
+                    getStudents('page=1&limit=10'),
+                    getTeachers('page=1&limit=10'),
+                    getParents('page=1&limit=10'),
+                    getFinancialRecords('page=1&limit=10'),
+                    getStudentAttendance('page=1&limit=10'),
+                    getExamSchedules('page=1&limit=10'),
+                    getExamResults('page=1&limit=10'),
+                    getDailyHifzEntries('page=1&limit=10'),
+                    getWeeklyHifzEntries('page=1&limit=10'),
+                    getMonthlyHifzEntries('page=1&limit=10'),
+                    getSiparaHifzEntries('page=1&limit=10'),
                 ]);
 
                 if (!isMounted) return;
 
                 const studentActivities = studentsResult.status === 'fulfilled'
-                    ? (studentsResult.value?.items || []).map((student) => ({
-                        title: `${student.fullName || 'نیا طالب علم'} رجسٹر ہوا`,
-                        amount: student.admissionNumber ? `داخلہ نمبر: ${student.admissionNumber}` : 'داخلہ مکمل',
-                        time: getRelativeTime(student.createdAt || student.updatedAt),
+                    ? getItems(studentsResult.value).map((student) => createActivity({
+                        record: student,
+                        title: `${student.fullName || 'طالب علم'} کا ریکارڈ ${wasUpdated(student) ? 'اپڈیٹ ہوا' : 'شامل ہوا'}`,
+                        amount: student.admissionNumber ? `داخلہ نمبر: ${student.admissionNumber}` : 'طالب علم',
                         color: 'bg-emerald-500',
-                        sortDate: getRecordDate(student),
+                        path: `/students/profile/${student.id}`,
+                    }))
+                    : [];
+
+                const teacherActivities = teachersResult.status === 'fulfilled'
+                    ? getItems(teachersResult.value).map((teacher) => createActivity({
+                        record: teacher,
+                        title: `${teacher.fullName || 'استاد / عملہ'} کا ریکارڈ ${wasUpdated(teacher) ? 'اپڈیٹ ہوا' : 'شامل ہوا'}`,
+                        amount: teacher.staffType === 'staff' ? 'دیگر عملہ' : (teacher.subject || 'استاد'),
+                        color: 'bg-teal-500',
+                        path: teacher.staffType === 'staff' ? '/staff/list' : `/teachers/details/${teacher.id}`,
+                    }))
+                    : [];
+
+                const parentActivities = parentsResult.status === 'fulfilled'
+                    ? getItems(parentsResult.value).map((parent) => createActivity({
+                        record: parent,
+                        title: `${parent.fullName || 'والدین'} کا ریکارڈ ${wasUpdated(parent) ? 'اپڈیٹ ہوا' : 'شامل ہوا'}`,
+                        amount: parent.familyNumber ? `فیملی نمبر: ${parent.familyNumber}` : 'والدین',
+                        color: 'bg-violet-500',
+                        path: `/students/parents/profile/${parent.id}`,
                     }))
                     : [];
 
                 const financeActivities = financeResult.status === 'fulfilled'
-                    ? (financeResult.value?.items || []).map((record) => {
+                    ? getItems(financeResult.value).map((record) => {
                         const isIncome = record.type === 'amdan' || record.type === 'income';
-                        return {
+                        return createActivity({
+                            record,
                             title: `${record.category || record.financeHead?.name || (isIncome ? 'آمدن' : 'خرچ')} ${isIncome ? 'جمع ہوئی' : 'درج ہوا'}`,
                             amount: formatCurrency(record.amount, 'PKR 0'),
-                            time: getRelativeTime(record.createdAt || record.date || record.transactionDate),
                             color: isIncome ? 'bg-blue-500' : 'bg-rose-500',
-                            sortDate: getRecordDate(record),
-                        };
+                            path: isIncome ? '/finance/income/fund-list' : '/finance/other-income-expense',
+                        });
                     })
                     : [];
 
-                const nextActivities = [...studentActivities, ...financeActivities]
+                const attendanceActivities = attendanceResult.status === 'fulfilled'
+                    ? getItems(attendanceResult.value).map((attendance) => createActivity({
+                        record: attendance,
+                        title: `${attendance.student?.fullName || 'طالب علم'} کی حاضری درج ہوئی`,
+                        amount: attendance.status || 'حاضری',
+                        color: 'bg-indigo-500',
+                        path: '/students/attendance',
+                    }))
+                    : [];
+
+                const examScheduleActivities = examSchedulesResult.status === 'fulfilled'
+                    ? getItems(examSchedulesResult.value).map((schedule) => createActivity({
+                        record: schedule,
+                        title: `${schedule.examName || 'امتحانی شیڈول'} ${wasUpdated(schedule) ? 'اپڈیٹ ہوا' : 'بنایا گیا'}`,
+                        amount: schedule.class?.name || schedule.subject?.name || 'امتحان',
+                        color: 'bg-amber-500',
+                        path: '/exams/schedule-list',
+                    }))
+                    : [];
+
+                const examResultActivities = examResultsResult.status === 'fulfilled'
+                    ? getItems(examResultsResult.value).map((result) => createActivity({
+                        record: result,
+                        title: `${result.student?.fullName || 'طالب علم'} کا امتحانی نتیجہ ${wasUpdated(result) ? 'اپڈیٹ ہوا' : 'محفوظ ہوا'}`,
+                        amount: result.percentage !== undefined ? `${result.percentage}%` : (result.examName || 'نتیجہ'),
+                        color: 'bg-cyan-500',
+                        path: '/exams/result-list',
+                    }))
+                    : [];
+
+                const mapHifzActivities = (result, label, path, color) => (
+                    result.status === 'fulfilled'
+                        ? getItems(result.value).map((entry) => createActivity({
+                            record: entry,
+                            title: `${entry.student?.fullName || 'طالب علم'} کا ${label} ${wasUpdated(entry) ? 'اپڈیٹ ہوا' : 'درج ہوا'}`,
+                            amount: entry.performanceStatus || entry.quality || 'حفظ',
+                            color,
+                            path,
+                        }))
+                        : []
+                );
+
+                const hifzActivities = [
+                    ...mapHifzActivities(dailyHifzResult, 'یومیہ جائزہ', '/hifz/daily/list', 'bg-lime-500'),
+                    ...mapHifzActivities(weeklyHifzResult, 'ہفتہ وار جائزہ', '/hifz/weekly/list', 'bg-green-500'),
+                    ...mapHifzActivities(monthlyHifzResult, 'ماہانہ جائزہ', '/hifz/monthly/list', 'bg-fuchsia-500'),
+                    ...mapHifzActivities(siparaHifzResult, 'سپارہ جائزہ', '/hifz/para/list', 'bg-orange-500'),
+                ];
+
+                const nextActivities = [
+                    ...studentActivities,
+                    ...teacherActivities,
+                    ...parentActivities,
+                    ...financeActivities,
+                    ...attendanceActivities,
+                    ...examScheduleActivities,
+                    ...examResultActivities,
+                    ...hifzActivities,
+                ]
                     .sort((a, b) => b.sortDate - a.sortDate)
-                    .slice(0, 4)
+                    .slice(0, 30)
                     .map(({ sortDate, ...activity }) => activity);
 
-                if (nextActivities.length) {
-                    setRecentActivities(nextActivities);
-                }
+                setRecentActivities(nextActivities);
 
-                setDashboardStatus((current) => ({ ...current, activities: nextActivities.length ? 'ready' : 'error' }));
+                const hasActivitySource = [
+                    studentsResult,
+                    teachersResult,
+                    parentsResult,
+                    financeResult,
+                    attendanceResult,
+                    examSchedulesResult,
+                    examResultsResult,
+                    dailyHifzResult,
+                    weeklyHifzResult,
+                    monthlyHifzResult,
+                    siparaHifzResult,
+                ].some((result) => result.status === 'fulfilled');
+
+                setDashboardStatus((current) => ({ ...current, activities: hasActivitySource ? 'ready' : 'error' }));
             } catch {
                 if (!isMounted) return;
+                setRecentActivities([]);
                 setDashboardStatus((current) => ({ ...current, activities: 'error' }));
             }
         };
@@ -422,16 +604,21 @@ export const Dashboard = () => {
                 <motion.div
                     className="lg:col-span-5 bg-[var(--color-surface)] p-8 rounded-[3rem] border border-[var(--color-border)] shadow-sm"
                 >
-                    <h3 className="text-lg font-bold text-[var(--color-text)] mb-6">کوئیک ایکشنز</h3>
+                    <div className="mb-6 flex items-center justify-between gap-4">
+                        <h3 className="text-lg font-bold text-[var(--color-text)]">کوئیک ایکشنز</h3>
+                        <button
+                            type="button"
+                            onClick={() => setIsQuickActionSettingsOpen(true)}
+                            className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm font-black text-[var(--color-text)] transition-all hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                        >
+                            <Settings2 size={17} />
+                            ترتیب دیں
+                        </button>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
-                        {[
-                            { label: "نیا طالب علم", icon: UserPlus, bg: "bg-blue-600 shadow-blue-600/30", path: "/students/admission" },
-                            { label: "نئے والدین", icon: Users, bg: "bg-emerald-500 shadow-emerald-500/30", path: "/students/parents" },
-                            { label: "حاضری لگائیں", icon: Calendar, bg: "bg-indigo-500 shadow-indigo-500/30", path: "/students/attendance" },
-                            { label: "فیس جمع کریں", icon: Wallet, bg: "bg-orange-500 shadow-orange-500/30", path: "/finance/income/fund-collection" }
-                        ].map((btn, i) => (
+                        {selectedQuickActions.map((btn) => (
                             <button
-                                key={i}
+                                key={btn.id}
                                 onClick={() => navigate(btn.path)}
                                 className={`flex flex-col items-center justify-center p-6 ${btn.bg} shadow-lg hover:shadow-2xl text-white rounded-3xl transition-all hover:scale-105 active:scale-95`}
                             >
@@ -439,6 +626,16 @@ export const Dashboard = () => {
                                 <span className="text-xs font-bold mt-2">{btn.label}</span>
                             </button>
                         ))}
+                        {!selectedQuickActions.length ? (
+                            <button
+                                type="button"
+                                onClick={() => setIsQuickActionSettingsOpen(true)}
+                                className="col-span-2 flex min-h-40 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] transition-all hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                            >
+                                <Settings2 size={26} />
+                                <span className="text-sm font-black">کوئیک ایکشن شامل کریں</span>
+                            </button>
+                        ) : null}
                     </div>
                 </motion.div>
 
@@ -446,19 +643,32 @@ export const Dashboard = () => {
                     className="lg:col-span-7 bg-[var(--color-surface)] p-8 rounded-[3rem] border border-[var(--color-border)] shadow-sm"
                 >
                     <h3 className="text-lg font-bold text-[var(--color-text)] mb-6">{withStatusLabel('تازہ ترین سرگرمیاں', dashboardStatus.activities)}</h3>
-                    <div className="space-y-3">
-                        {recentActivities.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between p-5 bg-[var(--color-bg)]/40 hover:bg-[var(--color-bg)] rounded-full transition-all border border-transparent hover:border-[var(--color-border)]">
-                                <div className="flex items-center gap-4">
+                    <div className="h-[390px] space-y-3 overflow-y-auto pl-2 vip-scrollbar">
+                        {recentActivities.map((item) => (
+                            <button
+                                type="button"
+                                key={item.id}
+                                onClick={() => navigate(item.path)}
+                                className="flex w-full items-center justify-between gap-4 rounded-3xl border border-transparent bg-[var(--color-bg)]/40 p-5 text-right transition-all hover:border-[var(--color-border)] hover:bg-[var(--color-bg)]"
+                            >
+                                <div className="flex min-w-0 items-center gap-4">
                                     <div className={`w-3 h-3 rounded-full ${item.color} shadow-lg shadow-current/40`} />
-                                    <span className="text-sm font-bold text-[var(--color-text)]">{item.title}</span>
+                                    <span className="truncate text-sm font-bold text-[var(--color-text)]">{item.title}</span>
                                 </div>
-                                <div className="text-left">
+                                <div className="flex shrink-0 items-center gap-3 text-left">
+                                    <ChevronLeft size={16} className="text-[var(--color-text-muted)]" />
+                                    <div>
                                     <span className="text-xs font-black text-[var(--color-text)] block">{item.amount}</span>
                                     <span className="text-[10px] text-[var(--color-text-muted)]">{item.time}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
+                        {!recentActivities.length && dashboardStatus.activities !== 'loading' ? (
+                            <div className="flex h-full items-center justify-center text-sm font-bold text-[var(--color-text-muted)]">
+                                ابھی کوئی سرگرمی دستیاب نہیں۔
+                            </div>
+                        ) : null}
                     </div>
                 </motion.div>
             </div>
@@ -473,6 +683,86 @@ export const Dashboard = () => {
                 <StatCard title="کل خرچ" value="PKR 33,000" subValue="78% اوسط حاضری" icon={TrendingUp} colorClass="bg-indigo-500" borderClass="bg-indigo-500" />
                 <StatCard title="کل آمدنی" value="PKR 803,000" subValue="اس مہینے 12% اضافہ" icon={Wallet} colorClass="bg-orange-500" borderClass="bg-orange-500" isIncome={true} />
             </motion.div>
+
+            {isQuickActionSettingsOpen ? (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm"
+                    onClick={() => setIsQuickActionSettingsOpen(false)}
+                >
+                    <div
+                        className="w-full max-w-2xl rounded-[2.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl md:p-8"
+                        dir="rtl"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-black text-[var(--color-text)]">کوئیک ایکشنز ترتیب دیں</h2>
+                                <p className="mt-2 text-sm font-bold text-[var(--color-text-muted)]">
+                                    جن اختیارات کو ڈیش بورڈ پر دکھانا ہو انہیں منتخب کریں۔
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsQuickActionSettingsOpen(false)}
+                                className="rounded-xl bg-[var(--color-bg)] p-2.5 text-[var(--color-text-muted)] transition-all hover:text-rose-500"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="mt-6 grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto pl-1 sm:grid-cols-2 vip-scrollbar">
+                            {quickActionCatalog.map((action) => {
+                                const isSelected = quickActionIds.includes(action.id);
+                                const Icon = action.icon;
+
+                                return (
+                                    <button
+                                        key={action.id}
+                                        type="button"
+                                        onClick={() => toggleQuickAction(action.id)}
+                                        className={`flex items-center justify-between gap-4 rounded-2xl border p-4 text-right transition-all ${
+                                            isSelected
+                                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                                                : 'border-[var(--color-border)] bg-[var(--color-bg)] hover:border-[var(--color-primary)]/50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className={`flex h-11 w-11 items-center justify-center rounded-xl text-white ${action.bg.split(' ')[0]}`}>
+                                                <Icon size={20} />
+                                            </span>
+                                            <span className="font-black text-[var(--color-text)]">{action.label}</span>
+                                        </div>
+                                        <span className={`flex h-7 w-7 items-center justify-center rounded-full border ${
+                                            isSelected
+                                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[#0b1120]'
+                                                : 'border-[var(--color-border)] text-transparent'
+                                        }`}>
+                                            <Check size={15} />
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[var(--color-border)] pt-5 sm:flex-row sm:justify-between">
+                            <button
+                                type="button"
+                                onClick={() => setQuickActionIds(defaultQuickActionIds)}
+                                className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-3 text-sm font-black text-[var(--color-text-muted)] transition-all hover:text-[var(--color-text)]"
+                            >
+                                ڈیفالٹ بحال کریں
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsQuickActionSettingsOpen(false)}
+                                className="rounded-2xl bg-[var(--color-primary)] px-7 py-3 text-sm font-black text-[#0b1120] transition-all hover:brightness-105"
+                            >
+                                محفوظ کریں
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
         </div>
     );

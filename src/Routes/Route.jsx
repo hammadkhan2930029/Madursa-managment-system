@@ -15,6 +15,7 @@ import { ExamRoutes } from './ExamRoutes';
 import { AdminLogin } from '../Pages/Auth/AdminLogin';
 import { isAdminAuthenticated } from '../Constant/AdminAuth';
 import LandingPage from '../Pages/Landing/LandingPage';
+import { StudentAttendanceHistory } from '../Pages/Students/AttendancePage/StudentAttendanceHistory';
 
 const LoginRoute = () => {
   if (isAdminAuthenticated()) {
@@ -48,6 +49,7 @@ export const AppRoutes = () => {
         <Route path="branch-management/:branchId" element={<Navigate to="/dashboard" replace />} />
         <Route path="HRManagement" element={<HRManagement />} />
         <Route path="staff/list" element={<TeachersList staffType="staff" />} />
+        <Route path="students/attendance-history/:id" element={<StudentAttendanceHistory />} />
         <Route path="finance/*" element={<FinanceRoutes />} />
         <Route path="hifz/*" element={<HifzRoutes />} />
 
